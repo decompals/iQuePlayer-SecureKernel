@@ -1,0 +1,55 @@
+OUTPUT_ARCH(mips)
+ENTRY(entrypoint)
+
+SECTIONS {
+    . = start;
+
+    .text : AT(0)
+    {
+        PROVIDE(entrypoint = .);
+
+        build/src/entry.o(.text*)
+        build/src/cache.o(.text*)
+        build/src/invaldcache.o(.text*)
+        build/src/9FC00B40.o(.text*)
+        build/src/9FC01B60.o(.text*)
+        build/src/9FC02700.o(.text*)
+        build/src/9FC031D0.o(.text*)
+        build/src/9FC03F10.o(.text*)
+        build/src/9FC043B0.o(.text*)
+        build/src/9FC04780.o(.text*)
+        build/src/libcrypto/aes.o(.text*)
+        build/src/libcrypto/aes_api.o(.text*)
+        build/src/libcrypto/aes_imp.o(.text*)
+        build/src/libcrypto/sha1.o(.text*)
+        build/src/libcrypto/bb_nn.o(.text*)
+        build/src/libcrypto/poly_math.o(.text*)
+        build/src/libcrypto/algorithms.o(.text*)
+        build/src/libcrypto/elliptic_math.o(.text*)
+    }
+
+    .rodata : 
+    {
+        /* TODO: Split */
+        build/asm/sk.rodata.o(.rodata*)
+    }
+
+    .data :
+    {
+        /* TODO: Split */
+        build/asm/sk.data.o(.data*)
+    }
+
+    .bss : 
+    {
+        /* TODO: Split */
+        __bss_start = .;
+        build/asm/sk.bss.o(.bss*)
+        __bss_end = .;
+    }
+
+    /DISCARD/ :
+    {
+        *(*);
+    }
+}
