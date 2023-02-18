@@ -23,10 +23,10 @@ OPTFLAGS := -Os -g3
 SRC_DIRS := $(shell find src -type d)
 ASM_DIRS := $(shell find asm -type d -not -path "asm/non_matchings*")
 # Source files
-C_FILES       := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
-S_FILES       := $(foreach dir,$(SRC_DIRS) $(ASM_DIRS),$(wildcard $(dir)/*.s))
-O_FILES       := $(foreach f,$(C_FILES:.c=.o),build/$f) \
-                 $(foreach f,$(S_FILES:.s=.o),build/$f)
+C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
+S_FILES := $(foreach dir,$(SRC_DIRS) $(ASM_DIRS),$(wildcard $(dir)/*.s))
+O_FILES := $(foreach f,$(C_FILES:.c=.o),build/$f) \
+           $(foreach f,$(S_FILES:.s=.o),build/$f)
 
 # Create build directories
 $(shell mkdir -p build $(foreach dir,$(SRC_DIRS) $(ASM_DIRS),build/$(dir)))
