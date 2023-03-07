@@ -4,6 +4,7 @@
 # Tool artifacts
 __pycache__/
 expected/
+ctx.c
 
 # Build/baserom artifacts
 build/
