@@ -10,8 +10,8 @@
 /* 000F7C 9FC00F7C AFB00028 */   sw         $s0, 0x28($sp)
 /* 000F80 9FC00F80 1040008E */  beqz        $v0, .L9FC011BC
 /* 000F84 9FC00F84 2402FFFF */   addiu      $v0, $zero, -1
-/* 000F88 9FC00F88 3C129FC1 */  lui         $s2, %hi(D_9FC0ED7C)
-/* 000F8C 9FC00F8C 2652ED7C */  addiu       $s2, $s2, %lo(D_9FC0ED7C)
+/* 000F88 9FC00F88 3C129FC1 */  lui         $s2, %hi(contentMetaDataHead + 0x48)
+/* 000F8C 9FC00F8C 2652ED7C */  addiu       $s2, $s2, %lo(contentMetaDataHead + 0x48)
 /* 000F90 9FC00F90 8E420000 */  lw          $v0, ($s2)
 /* 000F94 9FC00F94 30420002 */  andi        $v0, $v0, 2
 /* 000F98 9FC00F98 14400019 */  bnez        $v0, .L9FC01000
@@ -41,8 +41,8 @@
 /* 000FF8 9FC00FF8 14400070 */  bnez        $v0, .L9FC011BC
 /* 000FFC 9FC00FFC 2402FFFF */   addiu      $v0, $zero, -1
 .L9FC01000:
-/* 001000 9FC01000 3C109FC1 */  lui         $s0, %hi(D_9FC0EEE8)
-/* 001004 9FC01004 2610EEE8 */  addiu       $s0, $s0, %lo(D_9FC0EEE8)
+/* 001000 9FC01000 3C109FC1 */  lui         $s0, %hi(ticketHead + 8)
+/* 001004 9FC01004 2610EEE8 */  addiu       $s0, $s0, %lo(ticketHead + 8)
 /* 001008 9FC01008 96040000 */  lhu         $a0, ($s0)
 /* 00100C 9FC0100C 8603FFFC */  lh          $v1, -4($s0)
 /* 001010 9FC01010 3402FFFF */  ori         $v0, $zero, 0xffff
@@ -99,8 +99,8 @@
 /* 0010D0 9FC010D0 9442F306 */  lhu         $v0, %lo(D_9FC0F304 + 2)($v0)
 .L9FC010D4:
 /* 0010D4 9FC010D4 A4820000 */  sh          $v0, ($a0)
-/* 0010D8 9FC010D8 3C029FC1 */  lui         $v0, %hi(D_9FC0EEE4)
-/* 0010DC 9FC010DC 9442EEE4 */  lhu         $v0, %lo(D_9FC0EEE4)($v0)
+/* 0010D8 9FC010D8 3C029FC1 */  lui         $v0, %hi(ticketHead + 4)
+/* 0010DC 9FC010DC 9442EEE4 */  lhu         $v0, %lo(ticketHead + 4)($v0)
 /* 0010E0 9FC010E0 3C019FC1 */  lui         $at, %hi(D_9FC0EBB0)
 /* 0010E4 9FC010E4 A422EBB0 */  sh          $v0, %lo(D_9FC0EBB0)($at)
 /* 0010E8 9FC010E8 0BF0043E */  j           .L9FC010F8

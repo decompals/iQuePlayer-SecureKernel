@@ -16,13 +16,13 @@
 /* 0029B0 9FC029B0 03E00008 */  jr          $ra
 /* 0029B4 9FC029B4 ACA30000 */   sw         $v1, ($a1)
 .L9FC029B8:
-/* 0029B8 9FC029B8 3C039FC1 */  lui         $v1, %hi(D_9FC0F30A)
-/* 0029BC 9FC029BC 9063F30A */  lbu         $v1, %lo(D_9FC0F30A)($v1)
+/* 0029B8 9FC029B8 3C039FC1 */  lui         $v1, %hi(D_9FC0F308 + 2)
+/* 0029BC 9FC029BC 9063F30A */  lbu         $v1, %lo(D_9FC0F308 + 2)($v1)
 /* 0029C0 9FC029C0 0BF00A6C */  j           .L9FC029B0
 /* 0029C4 9FC029C4 00001021 */   addu       $v0, $zero, $zero
 .L9FC029C8:
-/* 0029C8 9FC029C8 3C039FC1 */  lui         $v1, %hi(D_9FC0F309)
-/* 0029CC 9FC029CC 9063F309 */  lbu         $v1, %lo(D_9FC0F309)($v1)
+/* 0029C8 9FC029C8 3C039FC1 */  lui         $v1, %hi(D_9FC0F308 + 1)
+/* 0029CC 9FC029CC 9063F309 */  lbu         $v1, %lo(D_9FC0F308 + 1)($v1)
 /* 0029D0 9FC029D0 0BF00A6C */  j           .L9FC029B0
 /* 0029D4 9FC029D4 00001021 */   addu       $v0, $zero, $zero
 .L9FC029D8:

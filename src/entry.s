@@ -35,7 +35,7 @@ END(entrypoint)
 
 LEAF(startup)
     la      t0, __bss_start
-    la      t1, __bss_end
+    la      t1, __bss_end - 4
 
     or      t0, K1BASE
     or      t1, K1BASE

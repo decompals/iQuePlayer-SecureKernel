@@ -42,8 +42,8 @@
 /* 0013E0 9FC013E0 0440FFFD */  bltz        $v0, .L9FC013D8
 /* 0013E4 9FC013E4 3C02A460 */   lui        $v0, (0xA4600050 >> 16)
 .L9FC013E8:
-/* 0013E8 9FC013E8 3C109FC1 */  lui         $s0, %hi(D_9FC0ED40)
-/* 0013EC 9FC013EC 2610ED40 */  addiu       $s0, $s0, %lo(D_9FC0ED40)
+/* 0013E8 9FC013E8 3C109FC1 */  lui         $s0, %hi(contentMetaDataHead + 0xC)
+/* 0013EC 9FC013EC 2610ED40 */  addiu       $s0, $s0, %lo(contentMetaDataHead + 0xC)
 /* 0013F0 9FC013F0 8E020000 */  lw          $v0, ($s0)
 /* 0013F4 9FC013F4 3C039FC1 */  lui         $v1, %hi(D_9FC0F0DC)
 /* 0013F8 9FC013F8 8C63F0DC */  lw          $v1, %lo(D_9FC0F0DC)($v1)

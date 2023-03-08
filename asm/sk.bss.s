@@ -11,84 +11,38 @@
 
 glabel D_9FC0ED30
 /* 9FC0ED30 0000ED30 000004 */
+# File: 9FC00B40.c
 # [rwi ] word
-## startup
 ## skKeepAlive
     .skip 4
 
 glabel contentMetaDataHead
-/* 9FC0ED34 0000ED34 00000C */
-# [  i ] word array?
+/* 9FC0ED34 0000ED34 0001AC */
+# File: 9FC00B40.c
+# [  i ] BbContentMetaDataHead
 ## func_9FC00BAC
-## skLaunch
-    .skip 0xC
-
-glabel D_9FC0ED40
-/* 9FC0ED40 0000ED40 000018 */
-# [  i ] word array?
 ## func_9FC0134C
-    .skip 0x18
-
-glabel D_9FC0ED58
-/* 9FC0ED58 0000ED58 000014 */
-# [  i ] word array?
-## skRecryptEnd
-    .skip 0x14
-
-glabel D_9FC0ED6C
-/* 9FC0ED6C 0000ED6C 000010 */
-# [  i ] word array?
-## skRecryptData
-    .skip 0x10
-
-glabel D_9FC0ED7C
-/* 9FC0ED7C 0000ED7C 000050 */
-# [  i ] word array?
 ## skLaunchSetup
 ## skLaunch
-    .skip 0x50
-
-glabel D_9FC0EDCC
-/* 9FC0EDCC 0000EDCC 000004 */
-# [  i ] word
 ## skRecryptBegin
-    .skip 4
-
-glabel D_9FC0EDD0
-/* 9FC0EDD0 0000EDD0 000110 */
-# [  i ] word array?
 ## skRecryptData
-    .skip 0x110
+## skRecryptEnd
+    .skip 0x1AC
 
 glabel ticketHead
-/* 9FC0EEE0 0000EEE0 000004 */
-# [  i ] word
+/* 9FC0EEE0 0000EEE0 0001A0 */
+# File: 9FC00B40.c
+# [  i ] BbTicketHead
 ## skLaunchSetup
 ## skRecryptBegin
-    .skip 4
-
-glabel D_9FC0EEE4
-/* 9FC0EEE4 0000EEE4 000002 */
-# [r   ] halfword
 ## skLaunch
-    .skip 2
-    .balign 4
-
-glabel D_9FC0EEE8
-/* 9FC0EEE8 0000EEE8 000058 */
-# [  i ] word array
-## skLaunch
-    .skip 0x58
-
-glabel D_9FC0EF40
-/* 9FC0EF40 0000EF40 000140 */
-# [  i ] word array
 ## skSetLimit
-    .skip 0x140
+    .skip 0x1A0
 
 glabel sha1_ctx
 /* 9FC0F080 0000F080 00005C */
-# [  i ] word array
+# File: 9FC00B40.c
+# [  i ] SHA1Context
 ## skLaunch
 ## skRecryptBegin
 ## func_9FC0134C
@@ -97,6 +51,7 @@ glabel sha1_ctx
 
 glabel D_9FC0F0DC
 /* 9FC0F0DC 0000F0DC 000004 */
+# File: 9FC00B40.c
 # [rw  ] word
 ## skRecryptBegin
 ## func_9FC0134C
@@ -104,14 +59,16 @@ glabel D_9FC0F0DC
 
 glabel D_9FC0F0E0
 /* 9FC0F0E0 0000F0E0 0001E8 */
-# [  i ] word array
+# File: 9FC00B40.c
+# [  i ] AesKeyInstance
 ## skRecryptBegin
 ## func_9FC0134C
     .skip 0x1E8
 
 glabel D_9FC0F2C8
 /* 9FC0F2C8 0000F2C8 000014 */
-# [  i ] word array
+# File: 9FC00B40.c
+# [  i ] AesCipherInstance
 ## skRecryptBegin
 ## func_9FC0134C
 ## skRecryptData
@@ -119,6 +76,7 @@ glabel D_9FC0F2C8
 
 glabel D_9FC0F2DC
 /* 9FC0F2DC 0000F2DC 000004 */
+# File: 9FC00B40.c
 # [rw  ] word
 ## skRecryptBegin
 ## skRecryptData
@@ -126,6 +84,7 @@ glabel D_9FC0F2DC
 
 glabel D_9FC0F2E0
 /* 9FC0F2E0 0000F2E0 000004 */
+# File: 9FC00B40.c
 # [rw  ] word
 ## skRecryptBegin
 ## func_9FC0134C
@@ -134,13 +93,15 @@ glabel D_9FC0F2E0
 
 glabel D_9FC0F2E4
 /* 9FC0F2E4 0000F2E4 00001C */
+# File: 9FC00B40.c
 # [  i ] word array
 ## skRecryptData
 ## skRecryptComputeState
-    .skip 0x1C
+    .skip 0x1C # aes key IV? should be 0x10 size?
 
 glabel g_trial_time_elapsed
 /* 9FC0F300 0000F300 000004 */
+# File: One of [9FC00B40.c, 9FC01B60.c]
 # [rw  ] word
 ## skLaunch
 ## skKeepAlive
@@ -148,7 +109,8 @@ glabel g_trial_time_elapsed
     .skip 4
 
 glabel D_9FC0F304
-/* 9FC0F304 0000F304 000002 */
+/* 9FC0F304 0000F304 000004 */
+# File: One of [9FC00B40.c, 9FC01B60.c]
 # [rw  ] word
 ## skLaunch
 ## skKeepAlive
@@ -156,59 +118,29 @@ glabel D_9FC0F304
     .skip 4
 
 glabel D_9FC0F308
-/* 9FC0F308 0000F308 000001 */
-# [r i ] byte
+/* 9FC0F308 0000F308 000040 */
+# File: One of [9FC00B40.c, 9FC01B60.c, 9FC02700.c, 9FC031D0.c]
+# [r i ] BbVirage01
 ## skLaunch
+## skGetConsumption
 ## func_9FC022A8
 ## get_expected_revocation_list_version
 ## check_crlbundle_version
-    .skip 1
-
-glabel D_9FC0F309
-/* 9FC0F309 0000F309 000001 */
-# [r i ] byte
-## skVerifyHash
-## get_expected_revocation_list_version
-## check_crlbundle_version
-    .skip 1
-
-glabel D_9FC0F30A
-/* 9FC0F30A 0000F30A 000001 */
-# [r i ] byte
-## get_expected_revocation_list_version
-## check_crlbundle_version
-    .skip 1
-
-glabel D_9FC0F30B
-/* 9FC0F30B 0000F30B 000003 */
-# [    ] 
-    .skip 3
-
-glabel minimum_ticket_id
-/* 9FC0F30E 0000F30E 000002 */
-# [  i ]
-## skGetConsumption
 ## getTrialConsumptionByCid
-    .skip 2
-
-glabel D_9FC0F310
-/* 9FC0F310 0000F310 000038 */
-# [  i ] word array
-## skAdvanceTicketWindow
-    .skip 0x38
+    .skip 0x40
 
 glabel cur_proc_allowed_skc_bitmask
 /* 9FC0F348 0000F348 000004 */
+# File: 9FC031D0.c
 # [ wi ] word
 ## skc_handler
 ## set_proc_permissions
     .skip 4
 
-# (elliptic_math.c)
-
 glabel named_curve
 /* 9FC0F34C 0000F34C 000044 */
-# [  i ] word
+# File: elliptic_math.c
+# [  i ] curve
 ## eccGenAesKey
 ## eccGenPublicKey
 ## Init_233_bit
@@ -217,16 +149,18 @@ glabel named_curve
 
 glabel precomputed_bp
 /* 9FC0F390 0000F390 000400 */
-# [  i ] word array
+# File: elliptic_math.c
+# [  i ] point [16]
 ## Init_233_bit
 ## poly_elliptic_mul_four
     .skip 0x400
 
 glabel named_point
 /* 9FC0F790 0000F790 00003C */
-# [  i ] word array
+# File: elliptic_math.c
+# [  i ] point
 ## eccGenAesKey
 ## eccGenPublicKey
 ## Init_233_bit_ECDSA
 ## Init_233_bit
-    .skip 0x3C
+    .skip 0x40

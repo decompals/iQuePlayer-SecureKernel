@@ -10,8 +10,8 @@
 /* 000EB4 9FC00EB4 00401821 */  addu        $v1, $v0, $zero
 /* 000EB8 9FC00EB8 14600022 */  bnez        $v1, .L9FC00F44
 /* 000EBC 9FC00EBC 8FBF002C */   lw         $ra, 0x2c($sp)
-/* 000EC0 9FC00EC0 3C109FC1 */  lui         $s0, %hi(D_9FC0ED7C)
-/* 000EC4 9FC00EC4 2610ED7C */  addiu       $s0, $s0, %lo(D_9FC0ED7C)
+/* 000EC0 9FC00EC0 3C109FC1 */  lui         $s0, %hi(contentMetaDataHead + 0x48)
+/* 000EC4 9FC00EC4 2610ED7C */  addiu       $s0, $s0, %lo(contentMetaDataHead + 0x48)
 /* 000EC8 9FC00EC8 8E430000 */  lw          $v1, ($s2)
 /* 000ECC 9FC00ECC 8E020000 */  lw          $v0, ($s0)
 /* 000ED0 9FC00ED0 30420002 */  andi        $v0, $v0, 2
