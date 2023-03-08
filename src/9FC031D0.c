@@ -3,24 +3,25 @@
 #include "bbtypes.h"
 #include "libcrypto/sha1.h"
 #include "PR/bcp.h"
+#include "macros.h"
 
 void* wordcopy(void* dst, void* src, s32 nWords);
 void* memcpy(void* dst, void* src, u32 num);
 
-extern Virage2* virage2_offset;
+extern BbVirage2* virage2_offset;
 
 void virage2_gen_public_key(u32* pubkeyOut) {
     u32 i;
 
-    for(i = 0; i < 0x10; i++) {
+    for(i = 0; i < ARRAY_COUNT(virage2_offset->publicKey); i++) {
         if (virage2_offset->publicKey[i] != 0) {
-            wordcopy(pubkeyOut, virage2_offset->publicKey, 0x10);
+            wordcopy(pubkeyOut, virage2_offset->publicKey, ARRAY_COUNT(virage2_offset->publicKey));
             return;
         }
     }
 
     eccGenPublicKey(pubkeyOut, virage2_offset->privateKey);
-    wordcopy(virage2_offset->publicKey, pubkeyOut, 0x10);
+    wordcopy(virage2_offset->publicKey, pubkeyOut, ARRAY_COUNT(virage2_offset->publicKey));
 }
 
 extern u32 cur_proc_allowed_skc_bitmask;
@@ -84,7 +85,7 @@ s32 rsa_check_signature(s32* digest, unsigned long* certpublickey, unsigned long
 INCLUDE_ASM("asm/non_matchings/9FC031D0", rsa_check_signature);
 #endif
 
-s32 func_9FC03410(void* randomOut, s32 size) {
+s32 func_9FC03410(void* randomOut, s32 nWords) {
     SHA1Context sha1ctx;
     u8 randomBytes[0x200];
     u8 sp270[125][0x14];
@@ -94,9 +95,10 @@ s32 func_9FC03410(void* randomOut, s32 size) {
     s32 j;
     s32 k;
 
-    if (size > 8) {
+    if (nWords > 8) {
         return -1;
     }
+    
     do {
         for(i = 0; i < 125; i++) {
             for(j = 0; j < 0x200; j++) {
@@ -118,14 +120,14 @@ s32 func_9FC03410(void* randomOut, s32 size) {
     SHA1Input(&sha1ctx, virage2_offset->selfMsgKey, 0x10);
     SHA1Result(&sha1ctx, spC38);
 
-    if (size > 4) {
+    if (nWords > 4) {
         wordcopy(randomOut, spC38, 4);
         SHA1Reset(&sha1ctx);
         SHA1Input(&sha1ctx, sp270, sp270[0][1] + 1);
         SHA1Result(&sha1ctx, spC38);
-        wordcopy(randomOut + 0x10, spC38, size - 4);
+        wordcopy(randomOut + 0x10, spC38, nWords - 4);
     } else {
-        wordcopy(randomOut, spC38, size);
+        wordcopy(randomOut, spC38, nWords);
     }
     return 0;
 }
@@ -356,7 +358,7 @@ s32 calc_virage01_checksum(void* d) {
     return sum;
 }
 
-s32 read_virage01(s32* virageController, Virage01* virageData) {
+s32 read_virage01(s32* virageController, BbVirage01* virageData) {
     // Read virage data from specified virage controller. 0x10 words, 0x40 bytes
     wordcopy(virageData, (void*)PHYS_TO_K1((u32)virageController), 0x10);
 
@@ -369,9 +371,9 @@ s32 read_virage01(s32* virageController, Virage01* virageData) {
 }
 
 extern s8 D_9FC0EBC4;
-s32 write_virage_data(void* controller, Virage01* data, s32 size);
+s32 write_virage_data(void* controller, BbVirage01* data, s32 size);
 
-s32 write_virage01_data(Virage01* virageData) {
+s32 write_virage01_data(BbVirage01* virageData) {
     u32 virageController;
 
     virageData->csumAdjust = 0;
@@ -392,7 +394,7 @@ s32 write_virage01_data(Virage01* virageData) {
     return 0;
 }
 
-s32 set_virage01_selector(Virage01* virageData) {
+s32 set_virage01_selector(BbVirage01* virageData) {
     s32 v0WriteCount;
     s32 v1WriteCount;
 
@@ -453,31 +455,26 @@ s32 check_unknown_range(void* pointer, s32 size, s32 alignment) {
 
 extern const char aRoot_1[];
 
-#ifdef NON_EQUIVALENT
-// need to work out the correct struct here.
-s32 check_cert_ranges(void* arg0) {
-    if ((check_untrusted_ptr_range(arg0, 4, 4) != 0) && (check_untrusted_ptr_range(arg0->unk0, 0x8C, 4) != 0)) {
-        if (*arg0->unk0 == 1) {
-            if (check_untrusted_ptr_range(arg0->unk0, 0x390, 4) != 0) {
-                if (strcmp(arg0->unk0 + 0xC, aRoot_1) != 0) {
-                    if (check_untrusted_ptr_range(arg0->unk4, 0x390, 4) != 0) {
+s32 check_cert_ranges(BbCertBase** arg0) {
+    if (check_untrusted_ptr_range(arg0, 4, 4) != 0) {
+        if(check_untrusted_ptr_range(arg0[0], sizeof(BbCertBase), 4) != 0) {
+            if (arg0[0]->certType == 1) {
+                if (check_untrusted_ptr_range(arg0[0], sizeof(BbRsaCert), 4) != 0) {
+                    if ((strcmp(arg0[0]->issuer, aRoot_1) == 0) || (check_untrusted_ptr_range(arg0[1], sizeof(BbRsaCert), 4) != 0)) {
                         return 1;
                     }
                 }
-            }
-        } else if (check_untrusted_ptr_range(arg0->unk0, 0x2CC, 4) != 0) {
-            if (check_untrusted_ptr_range(arg0->unk4, 0x390, 4) != 0) {
-                if (check_untrusted_ptr_range(arg0->unk8, 0x390, 4) != 0) {
-                    return 1;
+            } else if (check_untrusted_ptr_range(arg0[0], sizeof(BbEccCert), 4) != 0) {
+                if (check_untrusted_ptr_range(arg0[1], sizeof(BbRsaCert), 4) != 0) {
+                    if (check_untrusted_ptr_range(arg0[2], sizeof(BbRsaCert), 4) != 0) {
+                        return 1;
+                    }
                 }
             }
         }
     }
     return 0;
 }
-#else
-INCLUDE_ASM("asm/non_matchings/9FC031D0", check_cert_ranges);
-#endif
 
 extern const char aEntering_excep[];
 
