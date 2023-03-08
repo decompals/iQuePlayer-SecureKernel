@@ -13,7 +13,7 @@
 
 glabel skc_table
 /* 9FC0BDB0 0000BDB0 00003C */
-# [  i ] word array
+# [  i ] s32 (*[])()
 ## skc_handler
     .word skGetId
     .word skLaunchSetup
@@ -43,7 +43,7 @@ glabel skc_table_size
 
 glabel aRoot
 /* 9FC0BDF0 0000BDF0 000008 */
-# [  i ] string("Root", len=0x8)
+# [  i ] const char []
 ## verify_cert_signature
 ## verify_cert_chain
     .asciz "Root"
@@ -51,35 +51,35 @@ glabel aRoot
 
 glabel aXS
 /* 9FC0BDF8 0000BDF8 000004 */
-# [  i ] string("XS", len=0x4)
+# [  i ] const char []
 ## verify_cert_chain
     .asciz "XS"
     .balign 4
 
 glabel aCP
 /* 9FC0BDFC 0000BDFC 000004 */
-# [  i ] string("CP", len=0x4)
+# [  i ] const char []
 ## verify_cert_chain
     .asciz "CP"
     .balign 4
 
 glabel aRootXsca
 /* 9FC0BE00 0000BE00 00000C */
-# [  i ] string("Root-XSCA", len=0xC)
+# [  i ] const char []
 ## check_crl_root
     .asciz "Root-XSCA"
     .balign 4
 
 glabel aRootCpca
 /* 9FC0BE0C 0000BE0C 00000C */
-# [  i ] string("Root-CPCA", len=0xC)
+# [  i ] const char []
 ## check_crl_root
     .asciz "Root-CPCA"
     .balign 4
 
 glabel aRoot_0
 /* 9FC0BE18 0000BE18 000008 */
-# [  i ] string("Root", len=0x8)
+# [  i ] const char []
 ## check_crl_root
 ## verify_crlbundle
     .asciz "Root"
@@ -87,7 +87,7 @@ glabel aRoot_0
 
 glabel aRoot_1
 /* 9FC0BE20 0000BE20 000008 */
-# [  i ] string("Root", len=0x8)
+# [  i ] const char []
 ## check_cert_ranges
     .asciz "Root"
     .balign 4
@@ -168,7 +168,7 @@ glabel exponent
 
 glabel Te0
 /* 9FC0C160 0000C160 000400 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelEncrypt
     .word 0xC66363A5, 0xF87C7C84, 0xEE777799, 0xF67B7B8D, 0xFFF2F20D, 0xD66B6BBD, 0xDE6F6FB1, 0x91C5C554
     .word 0x60303050, 0x02010103, 0xCE6767A9, 0x562B2B7D, 0xE7FEFE19, 0xB5D7D762, 0x4DABABE6, 0xEC76769A
@@ -205,7 +205,7 @@ glabel Te0
 
 glabel Te1
 /* 9FC0C560 0000C560 000400 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelEncrypt
     .word 0xA5C66363, 0x84F87C7C, 0x99EE7777, 0x8DF67B7B, 0x0DFFF2F2, 0xBDD66B6B, 0xB1DE6F6F, 0x5491C5C5
     .word 0x50603030, 0x03020101, 0xA9CE6767, 0x7D562B2B, 0x19E7FEFE, 0x62B5D7D7, 0xE64DABAB, 0x9AEC7676
@@ -242,7 +242,7 @@ glabel Te1
 
 glabel Te2
 /* 9FC0C960 0000C960 000400 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelEncrypt
     .word 0x63A5C663, 0x7C84F87C, 0x7799EE77, 0x7B8DF67B, 0xF20DFFF2, 0x6BBDD66B, 0x6FB1DE6F, 0xC55491C5
     .word 0x30506030, 0x01030201, 0x67A9CE67, 0x2B7D562B, 0xFE19E7FE, 0xD762B5D7, 0xABE64DAB, 0x769AEC76
@@ -279,7 +279,7 @@ glabel Te2
 
 glabel Te3
 /* 9FC0CD60 0000CD60 000400 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelEncrypt
     .word 0x6363A5C6, 0x7C7C84F8, 0x777799EE, 0x7B7B8DF6, 0xF2F20DFF, 0x6B6BBDD6, 0x6F6FB1DE, 0xC5C55491
     .word 0x30305060, 0x01010302, 0x6767A9CE, 0x2B2B7D56, 0xFEFE19E7, 0xD7D762B5, 0xABABE64D, 0x76769AEC
@@ -316,7 +316,7 @@ glabel Te3
 
 glabel Te4
 /* 9FC0D160 0000D160 000003 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelKeySetupEnc
 ## rijndaelKeySetupDec
 ## rijndaelEncrypt
@@ -355,7 +355,7 @@ glabel Te4
 
 glabel Td0
 /* 9FC0D560 0000D560 000400 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelKeySetupDec
 ## rijndaelDecrypt
     .word 0x51F4A750, 0x7E416553, 0x1A17A4C3, 0x3A275E96, 0x3BAB6BCB, 0x1F9D45F1, 0xACFA58AB, 0x4BE30393
@@ -393,7 +393,7 @@ glabel Td0
 
 glabel Td1
 /* 9FC0D960 0000D960 000400 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelKeySetupDec
 ## rijndaelDecrypt
     .word 0x5051F4A7, 0x537E4165, 0xC31A17A4, 0x963A275E, 0xCB3BAB6B, 0xF11F9D45, 0xABACFA58, 0x934BE303
@@ -431,7 +431,7 @@ glabel Td1
 
 glabel Td2
 /* 9FC0DD60 0000DD60 000400 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelKeySetupDec
 ## rijndaelDecrypt
     .word 0xA75051F4, 0x65537E41, 0xA4C31A17, 0x5E963A27, 0x6BCB3BAB, 0x45F11F9D, 0x58ABACFA, 0x03934BE3
@@ -469,7 +469,7 @@ glabel Td2
 
 glabel Td3
 /* 9FC0E160 0000E160 000400 */
-# [r i ] word array?
+# [r i ] u32 [256]
 ## rijndaelKeySetupDec
 ## rijndaelDecrypt
     .word 0xF4A75051, 0x4165537E, 0x17A4C31A, 0x275E963A, 0xAB6BCB3B, 0x9D45F11F, 0xFA58ABAC, 0xE303934B
@@ -507,7 +507,7 @@ glabel Td3
 
 glabel Td4
 /* 9FC0E560 0000E560 000003 */
-# [r   ] word array?
+# [r   ] u32 [256]
 ## rijndaelDecrypt
     .word 0x52525252, 0x09090909, 0x6A6A6A6A, 0xD5D5D5D5, 0x30303030, 0x36363636, 0xA5A5A5A5, 0x38383838
     .word 0xBFBFBFBF, 0x40404040, 0xA3A3A3A3, 0x9E9E9E9E, 0x81818181, 0xF3F3F3F3, 0xD7D7D7D7, 0xFBFBFBFB
@@ -544,7 +544,7 @@ glabel Td4
 
 glabel rcon
 /* 9FC0E960 0000E960 000030 */
-# [r   ] word array?
+# [r   ] u32 []
 ## rijndaelKeySetupEnc
     .word 0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000, 0x80000000
     .word 0x1B000000, 0x36000000
@@ -555,13 +555,13 @@ glabel rcon
 
 glabel poly_prime
 /* 9FC0E990 0000E990 000020 */
-# [  i ] word array?
+# [  i ] field_2n
 ## poly_inv
     .word 0x00000200, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000400, 0x00000000, 0x00000001
 
 glabel rightmask
 /* 9FC0E9B0 0000E9B0 000080 */
-# [r   ] word array?
+# [r   ] element [32]
 ## divide_shift_n
     .word 0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000F, 0x0000001F, 0x0000003F, 0x0000007F
     .word 0x000000FF, 0x000001FF, 0x000003FF, 0x000007FF, 0x00000FFF, 0x00001FFF, 0x00003FFF, 0x00007FFF
@@ -570,7 +570,7 @@ glabel rightmask
 
 glabel leftmask
 /* 9FC0EA30 0000EA30 000080 */
-# [r   ] word array?
+# [r   ] element [32]
 ## multiply_shift_n
     .word 0x00000000, 0x80000000, 0xC0000000, 0xE0000000, 0xF0000000, 0xF8000000, 0xFC000000, 0xFE000000
     .word 0xFF000000, 0xFF800000, 0xFFC00000, 0xFFE00000, 0xFFF00000, 0xFFF80000, 0xFFFC0000, 0xFFFE0000
@@ -579,7 +579,7 @@ glabel leftmask
 
 glabel shift_by
 /* 9FC0EAB0 0000EAB0 000100 */
-# [r i ] byte array?
+# [r i ] unsigned char [256]
 ## poly_inv
     .byte 0x08, 0x00, 0x01, 0x00, 0x02, 0x00, 0x01, 0x00, 0x03, 0x00, 0x01, 0x00, 0x02, 0x00, 0x01, 0x00
     .byte 0x04, 0x00, 0x01, 0x00, 0x02, 0x00, 0x01, 0x00, 0x03, 0x00, 0x01, 0x00, 0x02, 0x00, 0x01, 0x00

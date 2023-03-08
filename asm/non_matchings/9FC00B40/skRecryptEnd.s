@@ -13,8 +13,8 @@
 /* 001608 9FC01608 0FF01A54 */  jal         SHA1Result
 /* 00160C 9FC0160C 27A50010 */   addiu      $a1, $sp, 0x10
 /* 001610 9FC01610 27A40010 */  addiu       $a0, $sp, 0x10
-/* 001614 9FC01614 3C109FC1 */  lui         $s0, %hi(D_9FC0ED58)
-/* 001618 9FC01618 2610ED58 */  addiu       $s0, $s0, %lo(D_9FC0ED58)
+/* 001614 9FC01614 3C109FC1 */  lui         $s0, %hi(contentMetaDataHead + 0x24)
+/* 001618 9FC01618 2610ED58 */  addiu       $s0, $s0, %lo(contentMetaDataHead + 0x24)
 /* 00161C 9FC0161C 02002821 */  addu        $a1, $s0, $zero
 /* 001620 9FC01620 0FF00EC7 */  jal         memcmp
 /* 001624 9FC01624 24060014 */   addiu      $a2, $zero, 0x14

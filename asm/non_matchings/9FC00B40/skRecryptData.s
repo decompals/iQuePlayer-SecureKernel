@@ -20,16 +20,16 @@
 /* 0014EC 9FC014EC 02301021 */  addu        $v0, $s1, $s0
 /* 0014F0 9FC014F0 16200004 */  bnez        $s1, .L9FC01504
 /* 0014F4 9FC014F4 2450FFF0 */   addiu      $s0, $v0, -0x10
-/* 0014F8 9FC014F8 3C109FC1 */  lui         $s0, %hi(D_9FC0ED6C)
-/* 0014FC 9FC014FC 2610ED6C */  addiu       $s0, $s0, %lo(D_9FC0ED6C)
+/* 0014F8 9FC014F8 3C109FC1 */  lui         $s0, %hi(contentMetaDataHead + 0x38)
+/* 0014FC 9FC014FC 2610ED6C */  addiu       $s0, $s0, %lo(contentMetaDataHead + 0x38)
 /* 001500 9FC01500 02003021 */  addu        $a2, $s0, $zero
 .L9FC01504:
 /* 001504 9FC01504 3C049FC1 */  lui         $a0, %hi(D_9FC0F2C8)
 /* 001508 9FC01508 2484F2C8 */  addiu       $a0, $a0, %lo(D_9FC0F2C8)
 /* 00150C 9FC0150C 0FF01336 */  jal         aesCipherInit
 /* 001510 9FC01510 24050002 */   addiu      $a1, $zero, 2
-/* 001514 9FC01514 3C049FC1 */  lui         $a0, %hi(D_9FC0EDD0)
-/* 001518 9FC01518 2484EDD0 */  addiu       $a0, $a0, %lo(D_9FC0EDD0)
+/* 001514 9FC01514 3C049FC1 */  lui         $a0, %hi(contentMetaDataHead + 0x9C)
+/* 001518 9FC01518 2484EDD0 */  addiu       $a0, $a0, %lo(contentMetaDataHead + 0x9C)
 /* 00151C 9FC0151C 0FF00DFF */  jal         aes_cbc_set_key_iv
 /* 001520 9FC01520 02002821 */   addu       $a1, $s0, $zero
 /* 001524 9FC01524 3C019FC1 */  lui         $at, %hi(D_9FC0F2E0)
