@@ -18,8 +18,8 @@
 /* 001958 9FC01958 0BF00660 */  j           .L9FC01980
 /* 00195C 9FC0195C 2402FFFF */   addiu      $v0, $zero, -1
 .L9FC01960:
-/* 001960 9FC01960 3C029FC1 */  lui         $v0, %hi(minimum_ticket_id)
-/* 001964 9FC01964 2442F30E */  addiu       $v0, $v0, %lo(minimum_ticket_id)
+/* 001960 9FC01960 3C029FC1 */  lui         $v0, %hi(D_9FC0F308 + 6)
+/* 001964 9FC01964 2442F30E */  addiu       $v0, $v0, %lo(D_9FC0F308 + 6)
 /* 001968 9FC01968 24450002 */  addiu       $a1, $v0, 2
 /* 00196C 9FC0196C 94420000 */  lhu         $v0, ($v0)
 /* 001970 9FC01970 24060034 */  addiu       $a2, $zero, 0x34

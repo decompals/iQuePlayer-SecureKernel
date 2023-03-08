@@ -1,6 +1,6 @@
 /* 0019F8 9FC019F8 3084FFFF */  andi        $a0, $a0, 0xffff
-/* 0019FC 9FC019FC 3C039FC1 */  lui         $v1, %hi(D_9FC0EF40)
-/* 001A00 9FC01A00 2463EF40 */  addiu       $v1, $v1, %lo(D_9FC0EF40)
+/* 0019FC 9FC019FC 3C039FC1 */  lui         $v1, %hi(ticketHead + 0x60)
+/* 001A00 9FC01A00 2463EF40 */  addiu       $v1, $v1, %lo(ticketHead + 0x60)
 /* 001A04 9FC01A04 90620000 */  lbu         $v0, ($v1)
 /* 001A08 9FC01A08 14400003 */  bnez        $v0, .L9FC01A18
 /* 001A0C 9FC01A0C 30A5FFFF */   andi       $a1, $a1, 0xffff

@@ -49,7 +49,7 @@ glabel D_9FC0EBB8
 
 glabel virage2_offset
 /* 9FC0EBC0 0000EBC0 000004 */
-# [r   ] word
+# [r   ] BbVirage2*
 ## func_9FC00BAC
 ## skGetId
 ## skSignHash
@@ -75,7 +75,7 @@ glabel D_9FC0EBC4
 
 glabel aEntering_excep
 /* 9FC0EBD0 0000EBD0 000020 */
-# [  i ] string("ENTERING_EXCEPTION HANDLER!!!\n", len=0x20)
+# [  i ] char []
 ## func_9FC03ED0
     .asciz "ENTERING_EXCEPTION HANDLER!!!\n"
     .balign 4
@@ -86,14 +86,14 @@ glabel aEntering_excep
 
 glabel precomputed_signer
 /* 9FC0EBF0 0000EBF0 000040 */
-# [r i ] word array?
+# [r i ] point
 ## poly_elliptic_mul
     .word 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
     .word 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
 
 glabel precomputed_pk
 /* 9FC0EC30 0000EC30 000100 */
-# [  i ] word array?
+# [  i ] point [4]
 ## poly_elliptic_mul
     .word 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
     .word 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF

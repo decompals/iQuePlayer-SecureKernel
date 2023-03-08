@@ -15,8 +15,8 @@
 /* 001254 9FC01254 16200036 */  bnez        $s1, .L9FC01330
 /* 001258 9FC01258 8FBF0034 */   lw         $ra, 0x34($sp)
 /* 00125C 9FC0125C 02602021 */  addu        $a0, $s3, $zero
-/* 001260 9FC01260 3C129FC1 */  lui         $s2, %hi(D_9FC0EDCC)
-/* 001264 9FC01264 2652EDCC */  addiu       $s2, $s2, %lo(D_9FC0EDCC)
+/* 001260 9FC01260 3C129FC1 */  lui         $s2, %hi(contentMetaDataHead + 0x98)
+/* 001264 9FC01264 2652EDCC */  addiu       $s2, $s2, %lo(contentMetaDataHead + 0x98)
 /* 001268 9FC01268 8E460000 */  lw          $a2, ($s2)
 /* 00126C 9FC0126C 0FF011AE */  jal         recrypt_list_get_key_for_cid
 /* 001270 9FC01270 27A50010 */   addiu      $a1, $sp, 0x10

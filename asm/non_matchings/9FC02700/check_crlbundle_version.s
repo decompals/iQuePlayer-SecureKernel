@@ -23,8 +23,8 @@
 /* 002ABC 9FC02ABC 0BF00ACB */  j           .L9FC02B2C
 /* 002AC0 9FC02AC0 00001021 */   addu       $v0, $zero, $zero
 .L9FC02AC4:
-/* 002AC4 9FC02AC4 3C059FC1 */  lui         $a1, %hi(D_9FC0F30A)
-/* 002AC8 9FC02AC8 24A5F30A */  addiu       $a1, $a1, %lo(D_9FC0F30A)
+/* 002AC4 9FC02AC4 3C059FC1 */  lui         $a1, %hi(D_9FC0F308 + 2)
+/* 002AC8 9FC02AC8 24A5F30A */  addiu       $a1, $a1, %lo(D_9FC0F308 + 2)
 /* 002ACC 9FC02ACC 90A20000 */  lbu         $v0, ($a1)
 /* 002AD0 9FC02AD0 0043102B */  sltu        $v0, $v0, $v1
 /* 002AD4 9FC02AD4 10400015 */  beqz        $v0, .L9FC02B2C
@@ -32,8 +32,8 @@
 /* 002ADC 9FC02ADC 0BF00AC4 */  j           .L9FC02B10
 /* 002AE0 9FC02AE0 9082020F */   lbu        $v0, 0x20f($a0)
 .L9FC02AE4:
-/* 002AE4 9FC02AE4 3C059FC1 */  lui         $a1, %hi(D_9FC0F309)
-/* 002AE8 9FC02AE8 24A5F309 */  addiu       $a1, $a1, %lo(D_9FC0F309)
+/* 002AE4 9FC02AE4 3C059FC1 */  lui         $a1, %hi(D_9FC0F308 + 1)
+/* 002AE8 9FC02AE8 24A5F309 */  addiu       $a1, $a1, %lo(D_9FC0F308 + 1)
 /* 002AEC 9FC02AEC 90A20000 */  lbu         $v0, ($a1)
 /* 002AF0 9FC02AF0 8C83020C */  lw          $v1, 0x20c($a0)
 /* 002AF4 9FC02AF4 0043102B */  sltu        $v0, $v0, $v1

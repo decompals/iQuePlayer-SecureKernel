@@ -59,7 +59,7 @@ INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC01C24);
 void dram_init(void) {
     s32 i;
 
-    IO_READ(PI_60_REG);
+    IO_READ(PI_MISC_REG);
 
     IO_WRITE(RI_MODE_REG, RI_MODE_CMD_PRECHARGE_ALL);
     IO_READ(RI_MODE_REG);

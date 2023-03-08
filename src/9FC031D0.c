@@ -364,7 +364,7 @@ s32 read_virage01(s32* virageController, BbVirage01* virageData) {
 
     // Check that checksum is correct
     if (calc_virage01_checksum(virageData) == 0x7ADC) {
-        return virageData->unk3C;
+        return virageData->seq;
     }
 
     return -1;
@@ -376,9 +376,9 @@ s32 write_virage_data(void* controller, BbVirage01* data, s32 size);
 s32 write_virage01_data(BbVirage01* virageData) {
     u32 virageController;
 
-    virageData->csumAdjust = 0;
-    virageData->unk3C++;
-    virageData->csumAdjust = 0x7ADC - calc_virage01_checksum(virageData);
+    virageData->sum = 0;
+    virageData->seq++;
+    virageData->sum = 0x7ADC - calc_virage01_checksum(virageData);
 
     if (D_9FC0EBC4 == 1) {
         virageController = VIRAGE0_BASE_ADDR;
@@ -427,16 +427,16 @@ s32 set_virage01_selector(BbVirage01* virageData) {
     return 0;
 }
 
-extern TrialTimes minimum_ticket_id; // TODO: rename symbol
+extern BbVirage01 D_9FC0F308;
 
 u16 *getTrialConsumptionByCid(u16 cid) {
     cid &= 0x7FFF;
 
-    if ((cid < minimum_ticket_id.minContentId) || (cid >= (s32)(minimum_ticket_id.minContentId + sizeof(minimum_ticket_id.trialTimes)))) {
+    if ((cid < D_9FC0F308.tidWindow) || (cid >= (s32)(D_9FC0F308.tidWindow + ARRAY_COUNT(D_9FC0F308.cc)))) {
         return NULL;
     }
 
-    return minimum_ticket_id.trialTimes + (cid - minimum_ticket_id.minContentId);
+    return &D_9FC0F308.cc[cid - D_9FC0F308.tidWindow];
 }
 
 s32 check_untrusted_ptr_range(void* pointer, s32 size, s32 alignment) {

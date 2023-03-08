@@ -5,8 +5,8 @@
 .L9FC019A4:
 /* 0019A4 9FC019A4 24A20001 */  addiu       $v0, $a1, 1
 /* 0019A8 9FC019A8 00402821 */  addu        $a1, $v0, $zero
-/* 0019AC 9FC019AC 3C049FC1 */  lui         $a0, %hi(D_9FC0F310)
-/* 0019B0 9FC019B0 2484F310 */  addiu       $a0, $a0, %lo(D_9FC0F310)
+/* 0019AC 9FC019AC 3C049FC1 */  lui         $a0, %hi(D_9FC0F308 + 8)
+/* 0019B0 9FC019B0 2484F310 */  addiu       $a0, $a0, %lo(D_9FC0F308 + 8)
 /* 0019B4 9FC019B4 00021040 */  sll         $v0, $v0, 1
 /* 0019B8 9FC019B8 00443021 */  addu        $a2, $v0, $a0
 /* 0019BC 9FC019BC 94C20000 */  lhu         $v0, ($a2)
