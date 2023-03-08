@@ -101,7 +101,6 @@ int bigint_digit_bits(bigint_digit a) {
     return i;
 }
 
-#ifdef NON_EQUIVALENT
 void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c) {
     bigint_digit t[2];
     bigint_digit u;
@@ -110,9 +109,7 @@ void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c) {
     bigint_half_digit aLow;
     bigint_half_digit cHigh;
     bigint_half_digit cLow;
-
-    u32 temp_v0_2;
-    u16 var_t0;
+    bigint_digit temp; // ?
 
     cHigh = c >> 0x10;
     cLow = c;
@@ -127,22 +124,18 @@ void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c) {
 
     u = aHigh * cLow;
     v = aHigh * cHigh;
-    temp_v0_2 = u << 0x10;
 
-    t[0] -= temp_v0_2;
-    if (~temp_v0_2 < t[0]) {
+    temp = u << 0x10;
+    t[0] -= temp;
+    if (~temp < t[0]) {
         t[1]--;
     }
     t[1] = (t[1] - (u >> 0x10)) - v;
 
-    while (cHigh < t[1] || t[1] == cHigh) {
-        if (t[0] < (cLow << 0x10)) {
-            break;
-        }
-        temp_v0_2 = t[0] << 0x10;
-
-        t[0] -= temp_v0_2;
-        if (~temp_v0_2 < t[0]) {
+    while (cHigh < t[1] || t[1] == cHigh && !(t[0] < (cLow << 0x10))) {
+        temp = cLow << 0x10;
+        t[0] -= temp;
+        if (~temp < t[0]) {
             t[1]--;
         }
         aHigh++;
@@ -150,48 +143,34 @@ void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c) {
     }
 
     if (cHigh == 0xFFFF) {
-        var_t0 = t[1];
+        aLow = t[1];
     } else {
-        var_t0 = ((t[1] << 0x10) + (t[0] >> 0x10)) / (cHigh + 1);
+        aLow = ((t[1] << 0x10) + (t[0] >> 0x10)) / (cHigh + 1);
     }
 
-    u = var_t0 * cLow;
-    v = var_t0 * cHigh;
+    u = aLow * cLow;
+    v = aLow * cHigh;
     t[0] -= u;
     if (~u < t[0]) {
         t[1]--;
     }
 
-    temp_v0_2 = v << 0x10;
-    t[0] -= temp_v0_2;
-    if (~temp_v0_2 < t[0]) {
+    temp = v << 0x10;
+    t[0] -= temp;
+    if (~temp < t[0]) {
         t[1]--;
     }
 
     t[1] -= (v >> 0x10);
-    if (t[1] != 0) {
-        goto loop_27;
-    }
-block_26:
-    if (t[0] >= c) {
-    loop_27:
+    while (t[1] > 0 || (t[1] == 0 && t[0] >= c)) {
         t[0] -= c;
         if (~c < t[0]) {
             t[1]--;
         }
-        var_t0++;
-        if (t[1] != 0) {
-            goto loop_27;
-        }
-        goto block_26;
+        aLow++;
     }
-
-    *a = (aHigh << 0x10) + var_t0;
+    *a = (aHigh << 0x10) + aLow;
 }
-#else
-void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c);
-INCLUDE_ASM("asm/non_matchings/libcrypto/bb_nn", bigint_digit_div);
-#endif
 
 void bigint_encode(u8* a, int len, bigint_digit* b, int digits) {
     bigint_digit t;
@@ -405,7 +384,6 @@ int bigint_cmp(bigint_digit* a, bigint_digit* b, int digits) {
     return 0;
 }
 
-#ifdef NON_EQUIVALENT
 /**
  * Computes `a = c / d + b`
  */
@@ -418,47 +396,36 @@ void bigint_div(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, 
     int ddDigits;
     int shift;
 
-    u32 var_v0;
-
     ddDigits = bigint_digits(d, dDigits);
     if (ddDigits == 0) {
         return;
     }
     shift = 32 - bigint_digit_bits(d[ddDigits - 1]);
-    bigint_zero(dd, ddDigits);
-    dd[cDigits] = bigint_left_shift(dd, c, shift, cDigits);
-    bigint_left_shift(cc, d, shift, ddDigits);
-    t = cc[ddDigits - 1];
+    bigint_zero(cc, ddDigits);
+    cc[cDigits] = bigint_left_shift(cc, c, shift, cDigits);
+    bigint_left_shift(dd, d, shift, ddDigits);
+    t = dd[ddDigits - 1];
     bigint_zero(a, cDigits);
 
     for (i = cDigits - ddDigits; i >= 0; i--) {
         if (t == -1) {
-            ai = dd[i + ddDigits];
+            ai = cc[i + ddDigits];
         } else {
-            bigint_digit_div(&ai, &dd[i + ddDigits - 1], t + 1);
+            bigint_digit_div(&ai, &cc[i + ddDigits - 1], t + 1);
         }
-        var_v0 = bigint_sub_digit_mult(&dd[i], &dd[i], ai, cc, ddDigits);
-loop_9:
-        dd[i + ddDigits] -= var_v0;
-        if (dd[i + ddDigits] != 0) {
-block_8:
+
+        cc[i + ddDigits] -= bigint_sub_digit_mult(&cc[i], &cc[i], ai, dd, ddDigits);
+
+        while (cc[i + ddDigits] != 0 || bigint_cmp(&cc[i], dd, ddDigits) >= 0) {
             ai++;
-            var_v0 = bigint_sub(&dd[i], &dd[i], cc, ddDigits);
-            goto loop_9;
-        }
-        if (bigint_cmp(&dd[i], cc, ddDigits) >= 0) {
-            goto block_8;
+            cc[i + ddDigits] -= bigint_sub(&cc[i], &cc[i], dd, ddDigits);
         }
         a[i] = ai;
     }
 
     bigint_zero(b, dDigits);
-    bigint_right_shift(b, &dd[0], shift, ddDigits);
+    bigint_right_shift(b, cc, shift, ddDigits);
 }
-#else
-void bigint_div(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, bigint_digit* d, int dDigits);
-INCLUDE_ASM("asm/non_matchings/libcrypto/bb_nn", bigint_div);
-#endif
 
 /**
  * Computes `a = b % c`
@@ -479,8 +446,6 @@ void bigint_mod_mult(bigint_digit* a, bigint_digit* b, bigint_digit* c, bigint_d
     bigint_mod(a, t, digits * 2, d, digits);
 }
 
-#ifdef NON_MATCHING
-// Regalloc only
 /**
  * Computes `a = (b ^ c) % d`
  * via binary exponentiation (with both 2 and 4)
@@ -502,10 +467,10 @@ void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigi
     need[2] = 0;
     need[3] = 0;
 
-    ciBits = c[0];
+    exp = c[0];
     for (i = 0; i < 16; i++) {
-        need[ciBits % 4]++;
-        ciBits >>= 2;
+        need[exp % 4]++;
+        exp >>= 2;
     }
 
     if (need[3]) {
@@ -543,10 +508,6 @@ void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigi
     }
     bigint_copy(a, t, dDigits);
 }
-#else
-void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, bigint_digit* d, int dDigits);
-INCLUDE_ASM("asm/non_matchings/libcrypto/bb_nn", bigint_mod_exp);
-#endif
 
 int bigint_iszero(bigint_digit* a, int digits) {
     int i;
