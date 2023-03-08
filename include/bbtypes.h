@@ -139,4 +139,12 @@ typedef enum {
     RSA_4096
 } RsaSize;
 
+s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
+
+#define CHECK_UNTRUSTED(ptr) \
+    check_untrusted_ptr_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
+
+#define CHECK_UNTRUSTED_ARRAY(ptr, count) \
+    check_untrusted_ptr_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
+
 #endif

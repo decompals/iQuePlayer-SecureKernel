@@ -439,14 +439,14 @@ u16 *getTrialConsumptionByCid(u16 cid) {
     return &D_9FC0F308.cc[cid - D_9FC0F308.tidWindow];
 }
 
-s32 check_untrusted_ptr_range(void* pointer, s32 size, s32 alignment) {
+s32 check_untrusted_ptr_range(void* pointer, u32 size, u32 alignment) {
     u32 ptr = (u32)pointer;
     return ((ptr - 0x80000000) <= 0x800000) &        // pointer is within DRAM bounds
            ((ptr + size - 0x80000000) <= 0x800000) & // end pointer is within DRAM bounds
            ((ptr & (alignment - 1)) == 0);           // pointer is aligned
 }
 
-s32 check_unknown_range(void* pointer, s32 size, s32 alignment) {
+s32 check_unknown_range(void* pointer, u32 size, u32 alignment) {
     u32 ptr = (u32)pointer;
     return ((ptr - 0x9FC40000) <= 0x4000) &        // pointer is within SKRAM bounds
            ((ptr + size - 0x9FC40000) <= 0x4000) & // end pointer is within SKRAM bounds
@@ -456,21 +456,23 @@ s32 check_unknown_range(void* pointer, s32 size, s32 alignment) {
 extern const char aRoot_1[];
 
 s32 check_cert_ranges(BbCertBase** arg0) {
-    if (check_untrusted_ptr_range(arg0, 4, 4) != 0) {
-        if(check_untrusted_ptr_range(arg0[0], sizeof(BbCertBase), 4) != 0) {
-            if (arg0[0]->certType == 1) {
-                if (check_untrusted_ptr_range(arg0[0], sizeof(BbRsaCert), 4) != 0) {
-                    if ((strcmp(arg0[0]->issuer, aRoot_1) == 0) || (check_untrusted_ptr_range(arg0[1], sizeof(BbRsaCert), 4) != 0)) {
-                        return 1;
-                    }
-                }
-            } else if (check_untrusted_ptr_range(arg0[0], sizeof(BbEccCert), 4) != 0) {
-                if (check_untrusted_ptr_range(arg0[1], sizeof(BbRsaCert), 4) != 0) {
-                    if (check_untrusted_ptr_range(arg0[2], sizeof(BbRsaCert), 4) != 0) {
-                        return 1;
-                    }
-                }
-            }
+    if (!CHECK_UNTRUSTED(arg0)) {
+        return 0;
+    }
+    if (!CHECK_UNTRUSTED(arg0[0])) {
+        return 0;
+    }
+
+    if (arg0[0]->certType == 1) {
+        // RSA(root) or RSA -> RSA
+        if (CHECK_UNTRUSTED((BbRsaCert*)arg0[0]) && 
+            (strcmp(arg0[0]->issuer, aRoot_1) == 0 || CHECK_UNTRUSTED((BbRsaCert*)arg0[1]))) {
+            return 1;
+        }
+    } else { 
+        // ECC -> RSA -> RSA
+        if (CHECK_UNTRUSTED((BbEccCert*)arg0[0]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[1]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[2])) {
+            return 1;
         }
     }
     return 0;
