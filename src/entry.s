@@ -12,12 +12,12 @@ LEAF(entrypoint)
     dsll32  k1, k1, 0
     daddu   k1, k1, k0
     
-    lw      k0, PHYS_TO_K1(MI_14_REG)
+    lw      k0, PHYS_TO_K1(MI_SK_EXCEPTION_REG)
     and     k0, 8
     bgtz    k0, func_9FC0068C
      nop
 
-    lw      k0, PHYS_TO_K1(MI_14_REG)
+    lw      k0, PHYS_TO_K1(MI_SK_EXCEPTION_REG)
     move    k1, k0
     and     k0, 4
     bgtz    k0, func_9FC00470
@@ -91,7 +91,7 @@ LEAF(launch_app)
     and     t4, ~(SR_ERL | SR_EXL | SR_IE)
     mtc0    t4, C0_SR
 
-    la      t1, PHYS_TO_K1(MI_14_REG)
+    la      t1, PHYS_TO_K1(MI_SK_EXCEPTION_REG)
     lw      t0, (t1)
 
     move    a0, t0
@@ -194,7 +194,7 @@ LEAF(skc_handler)
 
     or      sp, K1BASE
 
-    la      t1, PHYS_TO_K1(MI_14_REG)
+    la      t1, PHYS_TO_K1(MI_SK_EXCEPTION_REG)
     lw      t0, (t1)
     and     t0, t0, ~0x44
     and     t0, t0, ~1
@@ -319,7 +319,7 @@ LEAF(func_9FC0079C)
     la      t0, dcache_invalidate_all
     jalr    t0
 
-    la      k1, PHYS_TO_K1(MI_14_REG)
+    la      k1, PHYS_TO_K1(MI_SK_EXCEPTION_REG)
     lw      k0, (k1)
     and     k0, k0, ~8
     and     k0, k0, ~1

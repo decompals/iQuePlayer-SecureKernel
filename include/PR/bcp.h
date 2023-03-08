@@ -7,31 +7,41 @@
  * Additional MIPS Interface (MI) Registers
  */
 
-#define MI_10_REG   (MI_BASE_REG + 0x10)
+#define MI_10_REG             (MI_BASE_REG + 0x10)
 
-#define MI_14_REG   (MI_BASE_REG + 0x14)
+#define MI_SK_EXCEPTION_REG   (MI_BASE_REG + 0x14)
 
-#define MI_18_REG   (MI_BASE_REG + 0x18)
+#define MI_18_REG             (MI_BASE_REG + 0x18)
 
-#define MI_38_REG   (MI_BASE_REG + 0x38)
+#define MI_RANDOM_BIT         (MI_BASE_REG + 0x2C)
+
+#define MI_HW_INTR_REG        (MI_BASE_REG + 0x38)
 
 
 /**
  * Additional Peripheral Interface (PI) Registers
  */
 
-#define PI_48_REG           (PI_BASE_REG + 0x48)
+#define PI_CARD_STATUS_REG  (PI_BASE_REG + 0x38)
+
+#define PI_CARD_CNT_REG     (PI_BASE_REG + 0x48)
 
 #define PI_AES_CTRL_REG     (PI_BASE_REG + 0x50) // for writing
 #define PI_AES_CMD          0x80000000
 #define PI_AES_STATUS_REG   (PI_BASE_REG + 0x50) // for reading
 #define PI_AES_BUSY         0x80000000
 
-#define PI_60_REG           (PI_BASE_REG + 0x60)
+#define PI_ALLOWED_IO       (PI_BASE_REG + 0x54)
+
+#define PI_EX_RD_LEN_REG    (PI_BASE_REG + 0x58)
+
+#define PI_EX_WR_LEN_REG    (PI_BASE_REG + 0x5C)
+
+#define PI_MISC_REG         (PI_BASE_REG + 0x60)
 
 #define PI_64_REG           (PI_BASE_REG + 0x64)
 
-#define PI_70_REG           (PI_BASE_REG + 0x70)
+#define PI_CARD_BLK_OFFSET_REG      (PI_BASE_REG + 0x70)
 
 #define PI_10000_BUF(n)     (PI_BASE_REG + 0x10000 + (n))
 
@@ -85,6 +95,42 @@
         RDB_SHORT_RD(PI_20000_REG);             \
     }(void)0
 #endif
+
+/**
+ * USB0 controller 
+ */
+
+#define USB0_BASE_ADDR      0x04900000
+
+#define USB0_STATUS_REG     (USB0_BASE_ADDR + 0x40010) // for reading
+
+#define USB0_CTRL_REG       (USB0_BASE_ADDR + 0x40010) // for writing
+
+/**
+ * USB1 controller 
+ */
+
+#define USB1_BASE_ADDR      0x04A00000
+
+#define USB1_STATUS_REG     (USB1_BASE_ADDR + 0x40010) // for reading
+
+#define USB1_CTRL_REG       (USB1_BASE_ADDR + 0x40010) // for writing
+
+/**
+ * Virage0
+ */
+
+#define VIRAGE0_BASE_ADDR  0x1FC80000
+
+#define VIRAGE0_STATUS_REG  (VIRAGE0_BASE_ADDR + 0xC000)
+
+/**
+ * Virage1
+ */
+
+#define VIRAGE1_BASE_ADDR  0x1FC90000
+
+#define VIRAGE1_STATUS_REG  (VIRAGE1_BASE_ADDR + 0xC000)
 
 /**
  * Virage2
