@@ -3,6 +3,8 @@
 
 #include "PR/ultratypes.h"
 
+typedef u32 BbAesKey[4];
+
 typedef struct Virage01 {
     /* 0x00 */ char unk00[0x3C];
     /* 0x3C */ u16 unk3C;
@@ -15,10 +17,10 @@ typedef struct Virage2 {
     /* 0x54 */ u32 publicKey[0x10];
     /* 0x94 */ u32 bbId;
     /* 0x98 */ u32 privateKey[8];
-    /* 0xB8 */ u32 bootAppKey[4];
-    /* 0xC8 */ u32 recryptListKey[4];
-    /* 0xD8 */ u32 appStateKey[4];
-    /* 0xE8 */ u32 selfMsgKey[4];
+    /* 0xB8 */ BbAesKey bootAppKey[4];
+    /* 0xC8 */ BbAesKey recryptListKey[4];
+    /* 0xD8 */ BbAesKey appStateKey[4];
+    /* 0xE8 */ BbAesKey selfMsgKey[4];
     /* 0xF8 */ u32 csumAdjust;
     /* 0xFC */ u32 jtagEnable;
 } Virage2; // size = 0x100

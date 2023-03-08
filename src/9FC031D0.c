@@ -28,7 +28,7 @@ extern u32 cur_proc_allowed_skc_bitmask;
 void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
     s32 temp;
 
-    IO_WRITE(PI_ALLOWED_IO, (u8)cmdHead->hwAccessRights);
+    IO_WRITE(PI_ALLOWED_IO, cmdHead->hwAccessRights & 0xFF);
     temp = ((cmdHead->hwAccessRights & 0x0000FF00) >> 8) & 1;
     IO_WRITE(USB0_CTRL_REG, temp);
     IO_WRITE(USB1_CTRL_REG, temp);
