@@ -139,6 +139,19 @@ typedef enum {
     RSA_4096
 } RsaSize;
 
+typedef struct {
+    /* 0x00 */ u32 contentId;
+    /* 0x04 */ BbAesKey contentKey;
+    /* 0x14 */ u32 unk14;
+    /* 0x18 */ char unk18[8];
+} RecryptListEntry;
+
+typedef struct {
+    /* 0x00 */ BbEccSig signature;
+    /* 0x40 */ s32 numEntries;
+    /* 0x44 */ RecryptListEntry entries[0];
+} RecryptList;
+
 s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \
