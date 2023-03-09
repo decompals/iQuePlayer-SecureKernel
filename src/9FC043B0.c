@@ -9,7 +9,7 @@ void virage2_gen_public_key(u32* pubkeyOut);
 
 s32 recrypt_list_verify_ecc_sig(RecryptList* list) {
     BbEccPublicKey publicKey;
-    s32 size;
+    u32 size;
 
     size = list->numEntries * sizeof(RecryptListEntry) + 4;
     virage2_gen_public_key(publicKey);
@@ -94,7 +94,7 @@ s32 recrypt_list_add_new_entry(RecryptList* list, s32 contentId, s32 arg2) {
     return 0;
 }
 
-s32 recrypt_list_get_key_for_cid(RecryptList* list, u32* key, s32 contentId) {
+s32 recrypt_list_get_key_for_cid(RecryptList* list, BbAesKey* key, s32 contentId) {
     RecryptListEntry entry;
     s32 var_s1;
 

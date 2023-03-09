@@ -1,8 +1,8 @@
 #ifndef AES_H
 #define AES_H
 
-void aes_HwKeyExpand(u32* key, u32* expandedKey);
-void aes_SwEncrypt(u32* key, u32* iv, void* in, u32 size, void* out);
-void aes_SwDecrypt(u32* key, u32* iv, void* in, u32 size, void* out);
+int aes_HwKeyExpand(u8* key, u8* expandedKey);
+int aes_SwEncrypt(u8* key, u8* iv, u8* in, u32 size, u8* out);
+int aes_SwDecrypt(u8* key, u8* iv, u8* in, u32 size, u8* out);
 
 #endif
