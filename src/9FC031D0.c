@@ -456,6 +456,7 @@ s32 check_unknown_range(void* pointer, u32 size, u32 alignment) {
 extern const char aRoot_1[];
 
 s32 check_cert_ranges(BbCertBase** arg0) {
+
     if (!CHECK_UNTRUSTED(arg0)) {
         return 0;
     }
