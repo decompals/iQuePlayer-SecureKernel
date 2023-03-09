@@ -18,7 +18,7 @@ void func_9FC04780(s32 a0, s32 a1, u32 (*a2)[7], s32 *a3) {
     a2[a0][a1]++;
 }
 
-s32 func_9FC047CC(u8 *a0, s32 a1) {
+s32 func_9FC047CC(u8* a0, s32 a1) {
     s32 sp10[16];
     u32 sp50[2][7];
     s32 sp88 = 0;
@@ -26,7 +26,7 @@ s32 func_9FC047CC(u8 *a0, s32 a1) {
     u32 tmp1;
     u32 tmp2;
     u32 tmp3;
-    u8 *i = a0;
+    u8* i = a0;
     s32 j;
 
     tmp0 = 0;
