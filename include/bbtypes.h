@@ -152,6 +152,9 @@ typedef struct {
     /* 0x44 */ RecryptListEntry entries[0];
 } RecryptList;
 
+typedef   BSL_boolean;
+typedef BSL_boolean boolean;
+
 s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \

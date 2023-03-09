@@ -1,4 +1,5 @@
 ## poly_inv
+glabel cus_times_u_to_n
 /* 0084BC 9FC084BC 27BDFE48 */  addiu       $sp, $sp, -0x1b8
 /* 0084C0 9FC084C0 AFB00190 */  sw          $s0, 0x190($sp)
 /* 0084C4 9FC084C4 00A08021 */  addu        $s0, $a1, $zero
