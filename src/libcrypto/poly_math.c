@@ -144,8 +144,72 @@ void poly_mul(field_2n* a, field_2n* b, field_2n* c) {
     double_to_single(&temp, c);
 }
 
-void cus_times_u_to_n(field_2n* a, int n, field_2n* b);
-INCLUDE_ASM("asm/non_matchings/libcrypto/poly_math", cus_times_u_to_n);
+void cus_times_u_to_n(field_2n* a, unsigned int n, field_2n* b) {
+    field_double extract_mask;
+    field_double temp1;
+    field_double temp2;
+    field_double temp3;
+    field_double temp_masked;
+    field_double a_copy;
+    int moving_one;
+    int num_words_divide;
+    int num_bits_divide;
+    int i;
+    int j;
+    element* fromptr;
+    element* temp1ptr;
+    element* temp2ptr;
+
+    single_to_double(a, &a_copy);
+    double_null(&extract_mask);
+    extract_mask.e[ARRAY_COUNT(extract_mask.e) - 1] = -1;
+
+    num_words_divide = n >> 5;
+    num_bits_divide = n & 0x1F;
+
+    for (i = 0; i < num_words_divide; i++) {
+        extract_masked_bits(&a_copy, &extract_mask, &temp_masked);
+        fromptr = temp_masked.e;
+        temp1ptr = temp1.e;
+        temp2ptr = temp2.e;
+
+        for (j = 0; j < (unsigned)ARRAY_COUNT(temp_masked.e); j++) {
+            *temp1ptr = *fromptr;
+            *temp2ptr = *fromptr;
+            fromptr++;
+            temp1ptr++;
+            temp2ptr++;
+        }
+
+        multiply_shift_n(&temp1, 0xE9);
+        multiply_shift_n(&temp2, 0x4A);
+        double_add(&a_copy, &temp1, &temp3);
+        double_add(&temp3, &temp2, &temp1);
+        zero_masked_bits(&temp1, &extract_mask);
+        divide_shift_n(&temp1, 0x20);
+        double_copy(&temp1, &a_copy);
+    }
+
+    double_null(&extract_mask);
+
+    moving_one = 1;
+    for (j = 0; j < num_bits_divide; j++) {
+        extract_mask.e[ARRAY_COUNT(extract_mask.e) - 1] |= moving_one;
+        moving_one *= 2;
+    }
+
+    extract_masked_bits(&a_copy, &extract_mask, &temp_masked);
+    double_copy(&temp_masked, &temp1);
+    double_copy(&temp_masked, &temp2);
+    multiply_shift_n(&temp1, 0xE9);
+    multiply_shift_n(&temp2, 0x4A);
+    double_add(&a_copy, &temp1, &temp3);
+    double_add(&temp3, &temp2, &temp1);
+    zero_masked_bits(&temp1, &extract_mask);
+    divide_shift_n(&temp1, num_bits_divide);
+    double_copy(&temp1, &a_copy);
+    double_to_single(&a_copy, b);
+}
 
 void is_less_than(field_2n* a, field_2n* b, BSL_boolean* result) {
     int i;
