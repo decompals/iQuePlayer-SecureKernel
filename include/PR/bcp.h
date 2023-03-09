@@ -13,6 +13,8 @@
 
 #define MI_18_REG             (MI_BASE_REG + 0x18)
 
+#define MI_1C_REG             (MI_BASE_REG + 0x1C)
+
 #define MI_RANDOM_BIT         (MI_BASE_REG + 0x2C)
 
 #define MI_HW_INTR_REG        (MI_BASE_REG + 0x38)
