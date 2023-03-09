@@ -90,7 +90,7 @@ typedef struct {
     /* 0x14 */ BbAesIv commonCmdIv;
     /* 0x24 */ BbShaHash hash;
     /* 0x38 */ BbAesIv iv;
-    /* 0x48 */ u32  execFlags;   
+    /* 0x48 */ u32  execFlags;
     /* 0x4C */ u32  hwAccessRights;
     /* 0x50 */ u32  secureKernelRights;
     /* 0x54 */ u32  bbid;
@@ -152,6 +152,8 @@ typedef struct {
     /* 0x44 */ RecryptListEntry entries[0];
 } RecryptList;
 
+#define RECRYPT_LIST_MAX_SIZE 0x4000
+
 s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \
@@ -159,5 +161,8 @@ s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED_ARRAY(ptr, count) \
     check_untrusted_ptr_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
+
+#define CHECK_UNTRUSTED_RECRYPT_LIST(ptr) \
+    check_untrusted_ptr_range((ptr), RECRYPT_LIST_MAX_SIZE, ALIGNOF(*(ptr)))
 
 #endif
