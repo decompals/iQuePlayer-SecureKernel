@@ -9,7 +9,7 @@ void delay(s32 arg0) {
 }
 
 void initialize_virage_controller(void* controller) {
-    s32 temp = (u32)controller & 0xFFFF0000;
+    u32 temp = (u32)controller & 0xFFFF0000;
 
     IO_WRITE(temp + 0x8000, 0x8A);
     IO_WRITE(temp + 0x8004, 0x13);
@@ -48,13 +48,13 @@ s32 write_virage_data(void* controller, s32 *data, s32 size) {
         delay(temp_lo);
         temp = IO_READ(controller);
         if (temp & 1) {
-	        return -1;
+            return -1;
         }
     }
 
     temp = IO_READ(controller);
-    if ((temp & 0x40000000) == 0) {
-    	return -1;
+    if (!(temp & 0x40000000)) {
+        return -1;
     }
 
     for(i = 0; i < size; i++) {
@@ -66,7 +66,7 @@ s32 write_virage_data(void* controller, s32 *data, s32 size) {
     }
 
     if (func_9FC04304(controller) != 0) {
-    	return -1;
+        return -1;
     }
 
     for(i = 0; i < size; i++) {
@@ -92,14 +92,14 @@ s32 write_virage_data(void* controller, s32 *data, s32 size) {
 }
 
 s32 func_9FC04220(void) {
-	u32 temp = (IO_READ(PI_MISC_REG) >> 25) & 3;
+    u32 temp = (IO_READ(PI_MISC_REG) >> 25) & 3;
 
-	if(temp == 0) {
-  		return 16;
-	} else if(temp == 1) {			
-  		return 12;
+    if(temp == 0) {
+        return 16;
+    } else if(temp == 1) {
+        return 12;
     } else {
-        return 10;
+       return 10;
     }
 }
 
@@ -111,7 +111,7 @@ s32 func_9FC0425C(void* controller) {
     IO_WRITE(temp, 0x03000000);
     delay(baseDelay + 100);
     delay(baseDelay + 400);
-    if ((IO_READ(controller) & 0x40000000) == 0) {
+    if (!(IO_READ(controller) & 0x40000000)) {
         return -1;
     }
     return 0;
@@ -125,15 +125,15 @@ s32 func_9FC04304(void* controller) {
     IO_WRITE(temp, 0x02000000);
     delay(100);
     var_v1 = IO_READ(temp2);
-    if ((var_v1 & 0x40000000) != 0) {
+    if (var_v1 & 0x40000000) {
         return -1;
     }
 
-    for(var_v1 = IO_READ(temp2); (var_v1 & 0x40000000) == 0; var_v1 = IO_READ(temp2)) {
+    for(var_v1 = IO_READ(temp2); !(var_v1 & 0x40000000); var_v1 = IO_READ(temp2)) {
         delay(100);
     }
 
-    if ((var_v1 & 0x20000000) == 0) {
+    if (!(var_v1 & 0x20000000)) {
         return -1;
     }
     return 0;
