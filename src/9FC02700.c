@@ -1,7 +1,22 @@
 #include "include_asm.h"
 #include "bbtypes.h"
 
-s32 func_9FC02700(BbCertBase* certBase) { // TODO: rename cert_get_size
+extern const char aRoot[];
+
+// TODO: rename these
+extern const u8 pubkey[];
+extern const u32 exponent;
+
+extern const char aXS[];
+extern const char aCP[];
+
+extern BbVirage01 D_9FC0F308;
+
+extern const char aRootCpca[];
+extern const char aRootXsca[];
+extern const char aRoot_0[];
+
+s32 cert_get_size(BbCertBase* certBase) {
 	switch(certBase->certType) {
         case 0:
             return sizeof(BbEccCert);
@@ -12,7 +27,7 @@ s32 func_9FC02700(BbCertBase* certBase) { // TODO: rename cert_get_size
     }
 }
 
-s32 func_9FC02734(BbCertBase* certBase) { // TODO: rename cert_get_signature_size
+s32 cert_get_signature_size(BbCertBase* certBase) {
     switch(certBase->sigType) {
         case 0:
         case 1:
@@ -25,7 +40,7 @@ s32 func_9FC02734(BbCertBase* certBase) { // TODO: rename cert_get_signature_siz
 
 }
 
-s32 get_cert_body(BbCertBase* certBase, void** out) { // TODO: rename cert_get_signature
+s32 cert_get_signature(BbCertBase* certBase, void** out) { // TODO: rename cert_get_signature
     switch (certBase->certType) {
         case 0:
             *out = &((BbEccCert*)certBase)->signature;
@@ -40,15 +55,8 @@ s32 get_cert_body(BbCertBase* certBase, void** out) { // TODO: rename cert_get_s
     return 0;
 }
 
-extern const char aRoot[];
-
-// TODO: rename these
-extern const u8 pubkey[];
-extern const u32 exponent;
-
 s32 verify_cert_signature(BbCertBase* toVerify, BbRsaCert* toVeryifyAgainst) {
     rsaDataBlock dataBlock;
-    rsaDataBlock* dataBlockPtr;
     void* signature;
     s32 certSize;
     s32 certSignatureSize;
@@ -57,9 +65,9 @@ s32 verify_cert_signature(BbCertBase* toVerify, BbRsaCert* toVeryifyAgainst) {
         return -1;
     }
 
-    certSize = func_9FC02700(toVerify);
-    certSignatureSize = func_9FC02734(toVerify);
-    get_cert_body(toVerify, &signature);
+    certSize = cert_get_size(toVerify);
+    certSignatureSize = cert_get_signature_size(toVerify);
+    cert_get_signature(toVerify, &signature);
     dataBlock.data = toVerify;
     dataBlock.size = certSize - certSignatureSize;
     if ((strcmp(toVerify->issuer, &aRoot) != 0) && (toVeryifyAgainst == NULL)) {
@@ -75,11 +83,8 @@ s32 verify_cert_signature(BbCertBase* toVerify, BbRsaCert* toVeryifyAgainst) {
     }
 }
 
-extern const char aXS[];
-extern const char aCP[];
-
 s32 verify_cert_chain(BbCertBase** certChain, s32 serverType) {
-    const char *serverName;
+    const char* serverName;
     s32 i;
 
     serverName = aXS;
@@ -105,8 +110,6 @@ s32 verify_cert_chain(BbCertBase** certChain, s32 serverType) {
     return 0;
 }
 
-extern BbVirage01 D_9FC0F308;
-
 s32 get_expected_revocation_list_version(u32 type, s32* versionOut) {
     switch (type) {
         case 0:
@@ -122,10 +125,6 @@ s32 get_expected_revocation_list_version(u32 type, s32* versionOut) {
             return -1;
     }
 }
-
-extern const char aRootCpca[];
-extern const char aRootXsca[];
-extern const char aRoot_0[];
 
 s32 check_crl_root(BbCrlHead* crlHead, s32 expectedType) {
     if (crlHead->type != expectedType) {
@@ -154,8 +153,6 @@ s32 check_crl_root(BbCrlHead* crlHead, s32 expectedType) {
 
     return 0;
 }
-
-extern BbVirage01 D_9FC0F308;
 
 s32 check_crlbundle_version(BbCrlBundle* crlBundle) {
     BbCrlHead* crlHead = crlBundle->head;
