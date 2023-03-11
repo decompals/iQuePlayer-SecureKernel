@@ -194,18 +194,18 @@ s32 check_crlbundle_version(BbCrlBundle* crlBundle) {
     return 0;
 }
 
-#ifdef NON_EQUIVALENT
-s32 verify_crlbundle(BbCrlBundle *bundle, s32 type, s32 requiredVersion) {
+s32 verify_crlbundle(BbCrlBundle *bundle, u32 type, s32 requiredVersion) {
     rsaDataBlock dataBlocks[2];
     u32 expectedVersion;
-    s32 var_v0;
-    BbRsaCert* temp_a2;
+    s32 t;
+    s32 ret;
+    BbRsaCert* cert;
 
-    if (get_expected_revocation_list_version(type, &expectedVersion) == 0) {
+    if (get_expected_revocation_list_version(type, &expectedVersion) != 0) {
         return -1;
     }
 
-    if (bundle->head == NULL) {
+    if (bundle->head == 0) {
         if (expectedVersion != 0) {
             return -1;
         }
@@ -217,95 +217,56 @@ s32 verify_crlbundle(BbCrlBundle *bundle, s32 type, s32 requiredVersion) {
         return 0;
     }
 
-    if(bundle->head->versionNumber < expectedVersion) {
+    if (expectedVersion > bundle->head->versionNumber) {
         return -1;
     }
 
-    if(bundle->head->versionNumber < requiredVersion) {
+    if (requiredVersion > bundle->head->versionNumber) {
         return -1;
     }
 
-    if(check_crl_root(bundle->head, type) != 0) {
+    if (check_crl_root(bundle->head, type) != 0) {
         return -1;
     }
 
-    switch (type) {
-        case 0:
-            if (verify_cert_chain(bundle->certChain, 1) != 0) {
+    if (type != 2) {
+        switch (type) {
+            case 0:
+                t = 1;
+                break;
+    
+            case 1:
+                t = 2;
+                break;
+    
+            default:
                 return -1;
-            }
+        }
 
-            dataBlocks[0].data = &bundle->head->type;
-            dataBlocks[0].size = 0x58;
-
-            dataBlocks[1].data = bundle->list;
-            dataBlocks[1].size = bundle->head->numberRevoked * sizeof(BbServerSuffix);
-
-            if (strcmp(bundle->head->issuer, aRoot_0) == 0) {
-                var_v0 = rsa_verify_signature(dataBlocks, 2, pubkey, exponent, 1, &bundle->head->signature);
-            } else {
-                temp_a2 = (BbRsaCert*)bundle->certChain[0];
-                var_v0 = rsa_verify_signature(dataBlocks, 2, temp_a2->publicKey, temp_a2->exponent, 2, &bundle->head->signature);
-            }
-
-            if (var_v0 == 0) {
-                var_v0 = check_crlbundle_version(bundle);
-            }
-
-            return var_v0;
-
-        case 1:
-            if (verify_cert_chain(bundle->certChain, 2) != 0) {
-                return -1;
-            }
-
-            dataBlocks[0].data = &bundle->head->type;
-            dataBlocks[0].size = 0x58;
-
-            dataBlocks[1].data = bundle->list;
-            dataBlocks[1].size = bundle->head->numberRevoked * sizeof(BbServerSuffix);
-
-            if (strcmp(bundle->head->issuer, aRoot_0) == 0) {
-                var_v0 = rsa_verify_signature(dataBlocks, 2, pubkey, exponent, 1, &bundle->head->signature);
-            } else {
-                temp_a2 = (BbRsaCert*)bundle->certChain[0];
-                var_v0 = rsa_verify_signature(dataBlocks, 2, temp_a2->publicKey, temp_a2->exponent, 2, &bundle->head->signature);
-            }
-
-            if (var_v0 == 0) {
-                var_v0 = check_crlbundle_version(bundle);
-            }
-
-            return var_v0;
-
-        case 2:
-            dataBlocks[0].data = &bundle->head->type;
-            dataBlocks[0].size = 0x58;
-
-            dataBlocks[1].data = bundle->list;
-            dataBlocks[1].size = bundle->head->numberRevoked * sizeof(BbServerSuffix);
-
-            if (strcmp(bundle->head->issuer, aRoot_0) == 0) {
-                var_v0 = rsa_verify_signature(dataBlocks, 2, pubkey, exponent, 1, &bundle->head->signature);
-            } else {
-                temp_a2 = (BbRsaCert*)bundle->certChain[0];
-                var_v0 = rsa_verify_signature(dataBlocks, 2, temp_a2->publicKey, temp_a2->exponent, 2, &bundle->head->signature);
-            }
-
-            if (var_v0 == 0) {
-                var_v0 = check_crlbundle_version(bundle);
-            }
-
-            return var_v0;
-        default:
+        if (verify_cert_chain(bundle->certChain, t)) {
             return -1;
+        }
+    }
+    
+    dataBlocks[0].data = &bundle->head->type;
+    dataBlocks[0].size = 0x58;
+
+    dataBlocks[1].data = bundle->list;
+    dataBlocks[1].size = bundle->head->numberRevoked * sizeof(BbServerSuffix);
+
+    if (strcmp(bundle->head->issuer, aRoot_0) == 0) {
+        ret = rsa_verify_signature(dataBlocks, 2, pubkey, exponent, 1, &bundle->head->signature);
+    } else {
+        cert = (BbRsaCert*) bundle->certChain[0];
+        ret = rsa_verify_signature(dataBlocks, 2, cert->publicKey, cert->exponent, bundle->head->sigType, &bundle->head->signature);
     }
 
-    return -1;
+    if (ret == 0) {
+        ret = check_crlbundle_version(bundle);
+    }
+
+    return ret;
 }
-#else
-INCLUDE_ASM("asm/non_matchings/9FC02700", verify_crlbundle);
-#endif
 
 s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion, BbCrlBundle* cprl, s32 requiredCprlVersion, BbCrlBundle* tsrl, s32 requiredTsrlVersion) {
     u32 i;
