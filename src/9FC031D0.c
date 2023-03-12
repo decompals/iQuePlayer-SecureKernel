@@ -457,27 +457,28 @@ s32 check_unknown_range(void* pointer, u32 size, u32 alignment) {
 extern const char aRoot_1[];
 
 s32 check_cert_ranges(BbCertBase** arg0) {
-
     if (!CHECK_UNTRUSTED(arg0)) {
-        return 0;
+        return FALSE;
     }
+
     if (!CHECK_UNTRUSTED(arg0[0])) {
-        return 0;
+        return FALSE;
     }
 
     if (arg0[0]->certType == 1) {
         // RSA(root) or RSA -> RSA
-        if (CHECK_UNTRUSTED((BbRsaCert*)arg0[0]) && 
+        if (CHECK_UNTRUSTED((BbRsaCert*)arg0[0]) &&
             (strcmp(arg0[0]->issuer, aRoot_1) == 0 || CHECK_UNTRUSTED((BbRsaCert*)arg0[1]))) {
-            return 1;
+            return TRUE;
         }
-    } else { 
+    } else {
         // ECC -> RSA -> RSA
         if (CHECK_UNTRUSTED((BbEccCert*)arg0[0]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[1]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[2])) {
-            return 1;
+            return TRUE;
         }
     }
-    return 0;
+
+    return FALSE;
 }
 
 extern const char aEntering_excep[];
