@@ -25,6 +25,8 @@ typedef u8 BbName[64];
 typedef u8 BbServerName[64];
 typedef u8 BbServerSuffix[64];
 
+typedef u8 BbContentDesc[0x2800];
+
 typedef struct {
     /* 0x00 */ u8 tsCrlVersion;
     /* 0x01 */ u8 caCrlVersion;
@@ -90,7 +92,7 @@ typedef struct {
     /* 0x14 */ BbAesIv commonCmdIv;
     /* 0x24 */ BbShaHash hash;
     /* 0x38 */ BbAesIv iv;
-    /* 0x48 */ u32  execFlags;   
+    /* 0x48 */ u32  execFlags;
     /* 0x4C */ u32  hwAccessRights;
     /* 0x50 */ u32  secureKernelRights;
     /* 0x54 */ u32  bbid;
@@ -101,7 +103,7 @@ typedef struct {
 } BbContentMetaDataHead; // size = 0x1AC
 
 typedef struct {
-    /* 0x0000 */ u8 contentDesc[0x2800];
+    /* 0x0000 */ BbContentDesc contentDesc;
     /* 0x2800 */ BbContentMetaDataHead head;
 } BbContentMetaData; // size = 0x29AC
 
@@ -129,6 +131,41 @@ typedef struct {
     /* 0x18 */ BbCertBase* cmdChain[5];
 } BbTicketBundle; // size = 0x2C
 
+typedef enum {
+    CRL_UNUSED0 = 0,
+    CRL_UNUSED1 = 1,
+    CRL_UNUSED2 = 2
+} BbCrlUnusedEnumType;
+
+typedef enum {
+    CRL_TS,
+    CRL_CA,
+    CRL_CP
+} BbCrlNum;
+
+typedef struct {
+    /* 0x0000 */ BbGenericSig signature;
+    /* 0x0200 */ u32 type;
+    /* 0x0204 */ u32 sigType;
+    /* 0x0208 */ BbCrlUnusedEnumType unusedPadding;
+    /* 0x020C */ u32 versionNumber;
+    /* 0x0210 */ u32 date;
+    /* 0x0214 */ BbServerName issuer;
+    /* 0x0254 */ u32 numberRevoked;
+} BbCrlHead; // size = 0x258
+
+typedef struct {
+    /* 0x0000 */ BbCrlHead* head;
+    /* 0x0004 */ BbServerSuffix* list;
+    /* 0x0008 */ BbCertBase* certChain[5];
+} BbCrlBundle; // size = 0x1C
+
+typedef struct {
+    /* 0x0000 */ BbCrlBundle tsrl;
+    /* 0x001C */ BbCrlBundle carl;
+    /* 0x0038 */ BbCrlBundle cprl;
+} BbAppLaunchCrls; // size = 0x54
+
 typedef struct {
     /* 0x00 */ void* data;
     /* 0x04 */ u32 size;
@@ -152,6 +189,8 @@ typedef struct {
     /* 0x44 */ RecryptListEntry entries[0];
 } RecryptList;
 
+#define RECRYPT_LIST_MAX_SIZE 0x4000
+
 s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \
@@ -159,5 +198,8 @@ s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED_ARRAY(ptr, count) \
     check_untrusted_ptr_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
+
+#define CHECK_UNTRUSTED_RECRYPT_LIST(ptr) \
+    check_untrusted_ptr_range((ptr), RECRYPT_LIST_MAX_SIZE, ALIGNOF(*(ptr)))
 
 #endif
