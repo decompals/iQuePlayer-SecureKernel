@@ -44,7 +44,7 @@ s32 func_9FC00BAC(BbTicketBundle* bundle) {
     BbAesKey key2;
     u16* cc;
     s16 tid;
-    BbTicketHead* ticketHead = &bundle->ticket->head;
+    BbTicketHead* head = &bundle->ticket->head;
     BbContentMetaDataHead* cmdHead = &bundle->ticket->cmd.head;
 
     if (verify_cert_chain(bundle->cmdChain, 2) != 0) {
@@ -55,20 +55,20 @@ s32 func_9FC00BAC(BbTicketBundle* bundle) {
         return -1;
     }
 
-    if (ticketHead->bbId != virage2_offset->bbId) {
+    if (head->bbId != virage2_offset->bbId) {
         return -1;
     }
 
-    tid = ticketHead->tid;
+    tid = head->tid;
 
     if (tid < 0) {
-        cc = getTrialConsumptionByCid(ticketHead->tid);
+        cc = getTrialConsumptionByCid(head->tid);
 
         if (cc == NULL) {
             return -1;
         }
 
-        if (ticketHead->code < 3 && *cc >= ticketHead->limit) {
+        if (head->code < 3 && *cc >= head->limit) {
             return -1;
         }
     }
@@ -84,8 +84,8 @@ s32 func_9FC00BAC(BbTicketBundle* bundle) {
         0,
         bundle->ticket->head.ticketSign) >= 0) {
         memcpy(&contentMetaDataHead, cmdHead, sizeof(BbContentMetaDataHead));
-        eccGenAesKey(ticketHead->serverKey, virage2_offset->privateKey, key1);
-        aes_SwDecrypt(key1, ticketHead->cmdIv, cmdHead->key, sizeof(BbAesKey), contentMetaDataHead.key);
+        eccGenAesKey(head->serverKey, virage2_offset->privateKey, key1);
+        aes_SwDecrypt(key1, head->cmdIv, cmdHead->key, sizeof(BbAesKey), contentMetaDataHead.key);
 
         blocks[0].data = &bundle->ticket->cmd.contentDesc;
         blocks[0].size = sizeof(BbContentDesc);
@@ -309,7 +309,7 @@ s32 skRecryptBegin(BbTicketBundle* bundle, BbAppLaunchCrls* crls, RecryptList* r
     return ret;
 }
 
-s32 func_9FC0134C(u8* buf, u32 size, s32 a2) {
+s32 func_9FC0134C(u8* buf, u32 size, s32 isRecrypt) {
     u32 chunkSize = 0x200;
     u32 left;
     u32 i;
@@ -334,7 +334,7 @@ s32 func_9FC0134C(u8* buf, u32 size, s32 a2) {
             D_9FC0F0DC = contentMetaDataHead.size;
         }
 
-        if (a2) {
+        if (isRecrypt) {
             aesBlockEncrypt(&D_9FC0F2C8, &D_9FC0F0E0, PHYS_TO_K1(PI_10000_BUF_START), chunkSize * 8, buf);
         }
 
@@ -523,7 +523,8 @@ s32 skSetLimit(u16 limit, u16 code) {
     if (ticketHead.issuer[0] == 0) {
         return -1;
     }
-    if ((s16)ticketHead.tid < 0) {
+
+    if ((s16) ticketHead.tid < 0) {
         if (ticketHead.code >= 3) {
             ticketHead.code = code;
             ticketHead.limit = limit;
@@ -534,6 +535,7 @@ s32 skSetLimit(u16 limit, u16 code) {
         ticketHead.code = code;
         ticketHead.limit = limit;
     }
+
     return 0;
 }
 
