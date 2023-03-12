@@ -164,9 +164,9 @@ s32 dma_from_cart(s32 arg0, void* outBuf, s32 length, s32 direction) {
     s32 cartAddr;
 
     IO_WRITE(PI_DRAM_ADDR_REG, outBuf);
-    IO_WRITE(PI_CART_ADDR_REG, arg0 == 0 ? 0 : 0x400);
+    IO_WRITE(PI_CART_ADDR_REG, arg0 ? 0x400 : 0);
 
-    if (direction == 0) {
+    if (!direction) {
         IO_WRITE(PI_EX_WR_LEN_REG, length - 1);
     } else {
         IO_WRITE(PI_EX_RD_LEN_REG, length - 1);
@@ -187,8 +187,9 @@ void func_9FC0384C(s32 arg0, s32 arg1) {
     s32 ctrl = 0;
 
     ctrl |= PI_AES_CMD;
-    ctrl |= (arg0 << 0xE);
-    if (arg1 != 0) {
+    ctrl |= arg0 << 0xE;
+
+    if (arg1) {
         ctrl |= 1;
     } else {
         ctrl |= 0x9A;

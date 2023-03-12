@@ -1,4 +1,3 @@
-#include "include_asm.h"
 #include "macros.h"
 #include "bbtypes.h"
 #include "libcrypto/aes.h"
