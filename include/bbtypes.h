@@ -184,7 +184,7 @@ typedef struct {
 } RecryptList;
 
 s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
-s32 check_unknown_ptr_range(void* ptr, u32 size, u32 alignment);
+s32 check_unknown_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \
     check_untrusted_ptr_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
