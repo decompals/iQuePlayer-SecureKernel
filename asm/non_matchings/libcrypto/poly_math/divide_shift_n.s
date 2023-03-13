@@ -1,6 +1,7 @@
 ## shift_and_add
 ## poly_mul
 ## cus_times_u_to_n
+glabel divide_shift_n
 /* 0081E4 9FC081E4 00A04821 */  addu        $t1, $a1, $zero
 /* 0081E8 9FC081E8 000912C0 */  sll         $v0, $t1, 0xb
 /* 0081EC 9FC081EC 3129001F */  andi        $t1, $t1, 0x1f

@@ -1,4 +1,5 @@
 ## poly_mul
+glabel poly_mul_partial
 /* 007D70 9FC07D70 27BDFBE0 */  addiu       $sp, $sp, -0x420
 /* 007D74 9FC07D74 AFB10414 */  sw          $s1, 0x414($sp)
 /* 007D78 9FC07D78 00808821 */  addu        $s1, $a0, $zero

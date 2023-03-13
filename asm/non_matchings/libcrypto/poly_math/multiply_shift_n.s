@@ -1,4 +1,5 @@
 ## cus_times_u_to_n
+glabel multiply_shift_n
 /* 0080E4 9FC080E4 00A04821 */  addu        $t1, $a1, $zero
 /* 0080E8 9FC080E8 000912C0 */  sll         $v0, $t1, 0xb
 /* 0080EC 9FC080EC 00024403 */  sra         $t0, $v0, 0x10
