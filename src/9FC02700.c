@@ -1,5 +1,5 @@
-#include "include_asm.h"
 #include "bbtypes.h"
+#include "macros.h"
 
 extern const char aRoot[];
 
@@ -16,8 +16,10 @@ extern const char aRootCpca[];
 extern const char aRootXsca[];
 extern const char aRoot_0[];
 
+s32 check_crlbundle_ranges(BbAppLaunchCrls* launchCrls);
+
 s32 cert_get_size(BbCertBase* certBase) {
-	switch(certBase->certType) {
+    switch(certBase->certType) {
         case 0:
             return sizeof(BbEccCert);
         case 1:
@@ -78,9 +80,9 @@ s32 verify_cert_signature(BbCertBase* toVerify, BbRsaCert* toVeryifyAgainst) {
         return rsa_verify_signature(&dataBlock, 1, pubkey, exponent, 1, signature);
     } else if ((u32)toVerify->sigType < 2u) {
         return rsa_verify_signature(&dataBlock, 1, toVeryifyAgainst->publicKey, toVeryifyAgainst->exponent, toVerify->sigType, signature);
-    } else {
-        return -1;
     }
+
+    return -1;
 }
 
 s32 verify_cert_chain(BbCertBase** certChain, s32 serverType) {
@@ -92,7 +94,7 @@ s32 verify_cert_chain(BbCertBase** certChain, s32 serverType) {
         serverName = aCP;
     }
 
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < MAX_CERTS; i++) {
         if((serverType != 0) && strncmp(certChain[i]->name.server, serverName, 2) != 0) {
             return -1;
         }
@@ -114,7 +116,7 @@ s32 get_expected_revocation_list_version(u32 type, s32* versionOut) {
     switch (type) {
         case 0:
             *versionOut = D_9FC0F308.tsCrlVersion;
-            return 0;            
+            return 0;
         case 1:
             *versionOut = D_9FC0F308.cpCrlVersion;
             return 0;
@@ -191,7 +193,7 @@ s32 check_crlbundle_version(BbCrlBundle* crlBundle) {
     return 0;
 }
 
-s32 verify_crlbundle(BbCrlBundle *bundle, u32 type, s32 requiredVersion) {
+s32 verify_crlbundle(BbCrlBundle* bundle, u32 type, s32 requiredVersion) {
     rsaDataBlock dataBlocks[2];
     u32 expectedVersion;
     s32 t;
@@ -246,7 +248,7 @@ s32 verify_crlbundle(BbCrlBundle *bundle, u32 type, s32 requiredVersion) {
     }
     
     dataBlocks[0].data = &bundle->head->type;
-    dataBlocks[0].size = 0x58;
+    dataBlocks[0].size = sizeof(BbCrlHead) - sizeof(BbGenericSig);
 
     dataBlocks[1].data = bundle->list;
     dataBlocks[1].size = bundle->head->numberRevoked * sizeof(BbServerSuffix);
@@ -342,21 +344,22 @@ s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrl
     return 0;
 }
 
-s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBase** chain, BbCrlBundle *arg2) {
+s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBase** chain, BbCrlBundle* arg2) {
     s32 ret;
     u32 i;
 
     if (arg2[1].head != NULL) {
-        if (check_unknown_range(arg2[1].head, sizeof(BbCrlHead), 4) == 0) {
+        if (!CHECK_SKRAM_RANGE(arg2[1].head)){
             return -1;
         }
+
         if (check_unknown_range(arg2[1].list, arg2[1].head->numberRevoked * sizeof(BbServerSuffix), 4) == 0) {
             return -1;
         }
     }
 
     if (arg2[2].head != NULL) {
-        if (check_unknown_range(arg2[2].head, sizeof(BbCrlHead), 4) == 0) {
+        if (!CHECK_SKRAM_RANGE(arg2[2].head)){
             return -1;
         }
 
@@ -364,11 +367,11 @@ s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBa
             return -1;
         }
 
-        if (check_unknown_range(arg2[2].certChain, 4, 4) == 0) {
+        if (!CHECK_SKRAM_RANGE(arg2[2].certChain)) {
             return -1;
         }
 
-        if (check_unknown_range(arg2[2].certChain[0], sizeof(BbRsaCert), 4) == 0) {
+        if (!CHECK_SKRAM_RANGE((BbRsaCert*)arg2[2].certChain[0])) {
             return -1;
         }
     }
@@ -403,7 +406,7 @@ s32 check_crlbundle_ranges(BbAppLaunchCrls* launchCrls) { // TODO: rename check_
 
     for (i = 0, bundle = &launchCrls->tsrl; i < 3; i++, bundle++) {
         if(bundle->head != NULL) {
-            if (check_untrusted_ptr_range(bundle->head, sizeof(BbCrlHead), 4) == 0) {
+            if (!CHECK_UNTRUSTED(bundle->head)) {
                 return 0;
             }
 
@@ -411,10 +414,8 @@ s32 check_crlbundle_ranges(BbAppLaunchCrls* launchCrls) { // TODO: rename check_
                 return 0;
             }
 
-            if(bundle->head->type != 2) {
-                if (check_cert_ranges(bundle->certChain) == 0) {
-                    return 0;
-                }                
+            if (bundle->head->type != 2 && check_cert_ranges(bundle->certChain) == 0) {
+                return 0;
             }
         }
     }

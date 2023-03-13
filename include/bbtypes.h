@@ -123,10 +123,12 @@ typedef struct {
     /* 0x29AC */ BbTicketHead head;
 } BbTicket; // size = 0x2B4C
 
+#define MAX_CERTS 5
+
 typedef struct {
     /* 0x00 */ BbTicket* ticket;
-    /* 0x04 */ BbCertBase* ticketChain[5];
-    /* 0x18 */ BbCertBase* cmdChain[5];
+    /* 0x04 */ BbCertBase* ticketChain[MAX_CERTS];
+    /* 0x18 */ BbCertBase* cmdChain[MAX_CERTS];
 } BbTicketBundle; // size = 0x2C
 
 typedef enum {
@@ -149,7 +151,7 @@ typedef struct {
 typedef struct {
     /* 0x0000 */ BbCrlHead* head;
     /* 0x0004 */ BbServerSuffix* list;
-    /* 0x0008 */ BbCertBase* certChain[5];
+    /* 0x0008 */ BbCertBase* certChain[MAX_CERTS];
 } BbCrlBundle; // size = 0x1C
 
 typedef struct {
@@ -182,11 +184,18 @@ typedef struct {
 } RecryptList;
 
 s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
+s32 check_unknown_ptr_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \
     check_untrusted_ptr_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
 
 #define CHECK_UNTRUSTED_ARRAY(ptr, count) \
     check_untrusted_ptr_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
+
+#define CHECK_SKRAM_RANGE(ptr) \
+    check_unknown_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
+
+#define CHECK_SKRAM_ARRAY_RANGE(ptr, count) \
+    check_unknown_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
 
 #endif
