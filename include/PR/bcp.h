@@ -19,6 +19,7 @@
 
 #define MI_HW_INTR_REG        (MI_BASE_REG + 0x38)
 
+#define MI_3C_REG             (MI_BASE_REG + 0x3C)
 
 /**
  * Additional Peripheral Interface (PI) Registers
@@ -45,7 +46,8 @@
 
 #define PI_CARD_BLK_OFFSET_REG      (PI_BASE_REG + 0x70)
 
-#define PI_10000_BUF(n)     (PI_BASE_REG + 0x10000 + (n))
+#define PI_10000_BUF_START  (PI_BASE_REG + 0x10000)
+#define PI_10000_BUF(n)     (PI_10000_BUF_START + (n))
 
 #define PI_10404_REG        (PI_BASE_REG + 0x10404)
 

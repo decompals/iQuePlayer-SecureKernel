@@ -164,9 +164,9 @@ s32 dma_from_cart(s32 arg0, void* outBuf, s32 length, s32 direction) {
     s32 cartAddr;
 
     IO_WRITE(PI_DRAM_ADDR_REG, outBuf);
-    IO_WRITE(PI_CART_ADDR_REG, arg0 == 0 ? 0 : 0x400);
+    IO_WRITE(PI_CART_ADDR_REG, arg0 ? 0x400 : 0);
 
-    if (direction == 0) {
+    if (!direction) {
         IO_WRITE(PI_EX_WR_LEN_REG, length - 1);
     } else {
         IO_WRITE(PI_EX_RD_LEN_REG, length - 1);
@@ -187,8 +187,9 @@ void func_9FC0384C(s32 arg0, s32 arg1) {
     s32 ctrl = 0;
 
     ctrl |= PI_AES_CMD;
-    ctrl |= (arg0 << 0xE);
-    if (arg1 != 0) {
+    ctrl |= arg0 << 0xE;
+
+    if (arg1) {
         ctrl |= 1;
     } else {
         ctrl |= 0x9A;
@@ -456,27 +457,28 @@ s32 check_unknown_range(void* pointer, u32 size, u32 alignment) {
 extern const char aRoot_1[];
 
 s32 check_cert_ranges(BbCertBase** arg0) {
-
     if (!CHECK_UNTRUSTED(arg0)) {
-        return 0;
+        return FALSE;
     }
+
     if (!CHECK_UNTRUSTED(arg0[0])) {
-        return 0;
+        return FALSE;
     }
 
     if (arg0[0]->certType == 1) {
         // RSA(root) or RSA -> RSA
-        if (CHECK_UNTRUSTED((BbRsaCert*)arg0[0]) && 
+        if (CHECK_UNTRUSTED((BbRsaCert*)arg0[0]) &&
             (strcmp(arg0[0]->issuer, aRoot_1) == 0 || CHECK_UNTRUSTED((BbRsaCert*)arg0[1]))) {
-            return 1;
+            return TRUE;
         }
-    } else { 
+    } else {
         // ECC -> RSA -> RSA
         if (CHECK_UNTRUSTED((BbEccCert*)arg0[0]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[1]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[2])) {
-            return 1;
+            return TRUE;
         }
     }
-    return 0;
+
+    return FALSE;
 }
 
 extern const char aEntering_excep[];

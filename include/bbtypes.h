@@ -25,6 +25,8 @@ typedef u8 BbName[64];
 typedef u8 BbServerName[64];
 typedef u8 BbServerSuffix[64];
 
+typedef u8 BbContentDesc[0x2800];
+
 typedef struct {
     /* 0x00 */ u8 tsCrlVersion;
     /* 0x01 */ u8 caCrlVersion;
@@ -90,7 +92,7 @@ typedef struct {
     /* 0x14 */ BbAesIv commonCmdIv;
     /* 0x24 */ BbShaHash hash;
     /* 0x38 */ BbAesIv iv;
-    /* 0x48 */ u32  execFlags;   
+    /* 0x48 */ u32  execFlags;
     /* 0x4C */ u32  hwAccessRights;
     /* 0x50 */ u32  secureKernelRights;
     /* 0x54 */ u32  bbid;
@@ -101,7 +103,7 @@ typedef struct {
 } BbContentMetaDataHead; // size = 0x1AC
 
 typedef struct {
-    /* 0x0000 */ u8 contentDesc[0x2800];
+    /* 0x0000 */ BbContentDesc contentDesc;
     /* 0x2800 */ BbContentMetaDataHead head;
 } BbContentMetaData; // size = 0x29AC
 
@@ -136,6 +138,12 @@ typedef enum {
     CRL_UNUSED1 = 1,
     CRL_UNUSED2 = 2
 } BbCrlUnusedEnumType;
+
+typedef enum {
+    CRL_TS,
+    CRL_CA,
+    CRL_CP
+} BbCrlNum;
 
 typedef struct {
     /* 0x0000 */ BbGenericSig signature;
@@ -183,6 +191,8 @@ typedef struct {
     /* 0x44 */ RecryptListEntry entries[0];
 } RecryptList;
 
+#define RECRYPT_LIST_MAX_SIZE 0x4000
+
 s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
 s32 check_unknown_range(void* ptr, u32 size, u32 alignment);
 
@@ -191,6 +201,9 @@ s32 check_unknown_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED_ARRAY(ptr, count) \
     check_untrusted_ptr_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
+
+#define CHECK_UNTRUSTED_RECRYPT_LIST(ptr) \
+    check_untrusted_ptr_range((ptr), RECRYPT_LIST_MAX_SIZE, ALIGNOF(*(ptr)))
 
 #define CHECK_SKRAM_RANGE(ptr) \
     check_unknown_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
