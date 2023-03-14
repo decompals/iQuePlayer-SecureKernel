@@ -132,7 +132,7 @@ void poly_mul(field_2n* a, field_2n* b, field_2n* c) {
     poly_mul_partial(a, b, &temp);
     shift_and_add(&temp, &extract_mask);
     divide_shift_n(&extract_mask, 159);
-    extract_mask.e[7] = -0x200;
+    extract_mask.e[7] = 0xFFFFFE00;
     extract_mask.e[8] = 0;
     extract_mask.e[9] = 0;
     extract_mask.e[10] = 0;
@@ -221,7 +221,7 @@ void is_less_than(field_2n* a, field_2n* b, BSL_boolean* result) {
             *result = BSL_TRUE;
             break;
         } else {
-            *result = TRUE;
+            *result = BSL_FALSE;
             break;
         }
     }
