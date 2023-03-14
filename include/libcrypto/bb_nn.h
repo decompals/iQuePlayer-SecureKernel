@@ -11,6 +11,15 @@ typedef struct {
 typedef u32 bigint_digit;
 typedef u16 bigint_half_digit;
 
+typedef struct {
+    /* 0x0000 */ element e[15];
+} field_double; /* size=0x3C */
+
+typedef enum {
+    BSL_TRUE = 0,
+    BSL_FALSE = 1
+} BSL_boolean, boolean;
+
 void bigint_digit_mult(bigint_digit* a, bigint_digit b, bigint_digit c);
 bigint_digit bigint_add_digit_mult(bigint_digit* a, bigint_digit* b, bigint_digit c, bigint_digit* d, int digits);
 bigint_digit bigint_sub_digit_mult(bigint_digit* a, bigint_digit* b, bigint_digit c, bigint_digit* d, int digits);
