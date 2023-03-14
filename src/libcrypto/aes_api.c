@@ -1,12 +1,12 @@
-#include "include_asm.h"
 #include "ultratypes.h"
+#include "string.h"
 #include "libcrypto/aes.h"
 
 int aesMakeKey(AesKeyInstance* key, u8 direction, int keyLen, u8* keyMaterial) {
     if (key == NULL) {
         return -3;
     }
-    if (direction >= 2U) {
+    if (direction >= 2) {
         return -1;
     }
     key->direction = direction;
@@ -107,7 +107,7 @@ int aesBlockDecrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, i
         case 2:
             iv = cipher->IV;
             for (i = numBlocks; i > 0; i--) {
-                rijndaelDecrypt(key->rk, key->Nr, input, &block);
+                rijndaelDecrypt(key->rk, key->Nr, input, block);
                 ((u32*)block)[0] ^= ((u32*)iv)[0];
                 ((u32*)block)[1] ^= ((u32*)iv)[1];
                 ((u32*)block)[2] ^= ((u32*)iv)[2];

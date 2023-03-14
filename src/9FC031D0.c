@@ -1,12 +1,12 @@
 #include "include_asm.h"
-#include "ultratypes.h"
 #include "bbtypes.h"
+#include "string.h"
+#include "bcp.h"
+#include "libcrypto/aes.h"
 #include "libcrypto/sha1.h"
-#include "PR/bcp.h"
 #include "macros.h"
 
 void* wordcopy(void* dst, void* src, s32 nWords);
-void* memcpy(void* dst, void* src, u32 num);
 
 extern BbVirage2* virage2_offset;
 
@@ -176,10 +176,10 @@ s32 dma_from_cart(s32 arg0, void* outBuf, s32 length, s32 direction) {
 }
 
 void aes_cbc_set_key_iv(s32* key, s32* iv) {
-    s32 expandedKey[0xB0 / 4];
+    s32 expandedKey[AES_EXPANDED_KEY_LEN / 4];
 
     aes_HwKeyExpand(key, &expandedKey);
-    wordcopy((void*)PHYS_TO_K1(PI_AES_EXPANDED_KEY_BUF(0)), &expandedKey, 0xB0 / 4);
+    wordcopy((void*)PHYS_TO_K1(PI_AES_EXPANDED_KEY_BUF(0)), &expandedKey, AES_EXPANDED_KEY_LEN / 4);
     wordcopy((void*)PHYS_TO_K1(PI_AES_IV_BUF(0)), iv, 4);
 }
 
@@ -268,8 +268,6 @@ int strncmp(const char* str1, const char* str2, int num) { // num is signed?
     return ret;
 }
 
-int memcmp(const void* ptr1, const void* ptr2, size_t num);
- 
 const char* strstr(const char* str1, const char* str2) {
     int len1;
     int len2;
@@ -294,7 +292,7 @@ const char* strstr(const char* str1, const char* str2) {
     return NULL;
 }
 
-void* memcpy(void* dst, void* src, u32 num) {
+void* memcpy(void* dst, void* src, size_t num) {
     u8* dstp = (u8*)dst;
     u8* srcp = (u8*)src;
 

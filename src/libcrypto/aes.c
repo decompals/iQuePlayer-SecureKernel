@@ -1,12 +1,12 @@
-#include "include_asm.h"
 #include "ultratypes.h"
+#include "string.h"
 #include "libcrypto/aes.h"
 
 int aes_HwKeyExpand(u8* key, u8* expandedKey) {
     AesKeyInstance keyI;
 
     if (aesMakeKey(&keyI, 1, 128, key) == 1) {
-        memcpy(expandedKey, &keyI.rk, 0xB0);
+        memcpy(expandedKey, &keyI.rk, AES_EXPANDED_KEY_LEN);
         return 0;
     }
     return -1;

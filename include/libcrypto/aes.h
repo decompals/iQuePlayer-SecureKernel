@@ -15,8 +15,7 @@ typedef struct {
     /* 0x4 */ u8 IV[16];
 } AesCipherInstance; // size = 0x14
 
-void* memcpy(void* dst, void* src, u32 num);
-void memclear(void* ptr, size_t num);
+#define AES_EXPANDED_KEY_LEN 0xB0
 
 // internal
 

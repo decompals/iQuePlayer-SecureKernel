@@ -1,4 +1,5 @@
 #include "bbtypes.h"
+#include "string.h"
 #include "macros.h"
 
 extern const char aRoot[];

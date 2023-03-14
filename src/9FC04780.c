@@ -1,4 +1,5 @@
 #include "bbtypes.h"
+#include "string.h"
 #include "macros.h"
 
 extern s16 D_9FC0BE30[];
