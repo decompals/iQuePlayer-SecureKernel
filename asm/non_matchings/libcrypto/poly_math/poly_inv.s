@@ -1,5 +1,6 @@
 ## poly_elliptic_sum
 ## poly_elliptic_double
+glabel poly_inv
 /* 008720 9FC08720 27BDFF60 */  addiu       $sp, $sp, -0xa0
 /* 008724 9FC08724 AFB00090 */  sw          $s0, 0x90($sp)
 /* 008728 9FC08728 00808021 */  addu        $s0, $a0, $zero
