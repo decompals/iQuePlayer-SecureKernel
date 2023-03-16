@@ -1,6 +1,7 @@
-#include "macros.h"
 #include "bbtypes.h"
+#include "string.h"
 #include "libcrypto/aes.h"
+#include "macros.h"
 
 extern BbVirage2* virage2_offset;
 

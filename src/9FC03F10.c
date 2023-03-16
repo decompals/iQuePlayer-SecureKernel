@@ -1,5 +1,5 @@
+#include "bbtypes.h"
 #include "bcp.h"
-#include "ultratypes.h"
 
 void delay(s32 arg0) {
     s32 i;

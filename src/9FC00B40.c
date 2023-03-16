@@ -1,7 +1,8 @@
 #include "bbtypes.h"
+#include "string.h"
+#include "bcp.h"
 #include "libcrypto/aes.h"
 #include "libcrypto/sha1.h"
-#include "bcp.h"
 #include "macros.h"
 
 extern BbContentMetaDataHead contentMetaDataHead;
