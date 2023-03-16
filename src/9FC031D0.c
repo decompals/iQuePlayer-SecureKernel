@@ -3,6 +3,7 @@
 #include "string.h"
 #include "bcp.h"
 #include "libcrypto/aes.h"
+#include "libcrypto/bsl.h"
 #include "libcrypto/sha1.h"
 #include "macros.h"
 
@@ -42,7 +43,7 @@ void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
 }
 
 void rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, s32 arg2, s32 arg3, s32 arg4, s32 arg5) {
-    u32 digest[5];
+    u8 digest[0x14];
     SHA1Context sha1ctx;
     s32 i;
 
@@ -52,14 +53,12 @@ void rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, s32 arg2,
             SHA1Input(&sha1ctx, dataBlocks[i].data, dataBlocks[i].size);
         }
     }
-    SHA1Result(&sha1ctx, &digest);
-    rsa_check_signature(&digest, arg2, arg3, arg4, arg5);
+    SHA1Result(&sha1ctx, digest);
+    rsa_check_signature(digest, arg2, arg3, arg4, arg5);
 }
 
-void bsl_rsa_verify(char* result, unsigned long* certsign, unsigned long* certpublickey, unsigned long* certexponent, int num_bits);
-
 #ifdef NON_MATCHING
-s32 rsa_check_signature(s32* digest, unsigned long* certpublickey, unsigned long certexponent, RsaSize rsaSize, unsigned long* certsign) {
+s32 rsa_check_signature(u8* digest, unsigned long* certpublickey, unsigned long certexponent, RsaSize rsaSize, unsigned long* certsign) {
     char result[512];
     s32 rsaBits;
     u32 rsaBytes;
@@ -89,7 +88,10 @@ s32 func_9FC03410(void* randomOut, s32 nWords) {
     SHA1Context sha1ctx;
     u8 randomBytes[0x200];
     u8 sp270[125][0x14];
-    u32 spC38[5];
+    union {
+        u32 words[5];
+        u8 bytes[0x14];
+    } spC38;
     u8  randomByte;
     s32 i;
     s32 j;
@@ -109,45 +111,45 @@ s32 func_9FC03410(void* randomOut, s32 nWords) {
                 randomBytes[j] = randomByte;
             }
             SHA1Reset(&sha1ctx);
-            SHA1Input(&sha1ctx, &randomBytes, 0x200);
-            SHA1Result(&sha1ctx, spC38);
-            memcpy(&sp270[i], spC38, 0x14);
+            SHA1Input(&sha1ctx, randomBytes, ARRAY_COUNT(randomBytes));
+            SHA1Result(&sha1ctx, spC38.bytes);
+            memcpy(&sp270[i], spC38.bytes, 0x14);
         }
     } while (func_9FC047CC(sp270, 0x9C4) == -1);
     SHA1Reset(&sha1ctx);
-    SHA1Input(&sha1ctx, sp270, sp270[0][0] + 1);
-    SHA1Input(&sha1ctx, virage2_offset->appStateKey, 0x10);
-    SHA1Input(&sha1ctx, virage2_offset->selfMsgKey, 0x10);
-    SHA1Result(&sha1ctx, spC38);
+    SHA1Input(&sha1ctx, (u8*)sp270, sp270[0][0] + 1);
+    SHA1Input(&sha1ctx, (u8*)virage2_offset->appStateKey, 0x10);
+    SHA1Input(&sha1ctx, (u8*)virage2_offset->selfMsgKey, 0x10);
+    SHA1Result(&sha1ctx, spC38.bytes);
 
     if (nWords > 4) {
-        wordcopy(randomOut, spC38, 4);
+        wordcopy(randomOut, spC38.words, 4);
         SHA1Reset(&sha1ctx);
-        SHA1Input(&sha1ctx, sp270, sp270[0][1] + 1);
-        SHA1Result(&sha1ctx, spC38);
-        wordcopy(randomOut + 0x10, spC38, nWords - 4);
+        SHA1Input(&sha1ctx, (u8*)sp270, sp270[0][1] + 1);
+        SHA1Result(&sha1ctx, spC38.bytes);
+        wordcopy(randomOut + 0x10, spC38.words, nWords - 4);
     } else {
-        wordcopy(randomOut, spC38, nWords);
+        wordcopy(randomOut, spC38.words, nWords);
     }
     return 0;
 }
 
 INCLUDE_ASM("asm/non_matchings/9FC031D0", func_9FC035EC);
 
-void func_9FC03694(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
-    u32 sp18[8];
+void func_9FC03694(u8* data, u32 datasize, u32* private_key, u32* signature, u32 identity) {
+    u32 random_data[8];
 
     do {
-        func_9FC035EC(&sp18, 8);
-    } while (bsl_compute_ecc_sig(arg0, arg1, arg2, &sp18, arg3, arg4) != 0);
+        func_9FC035EC(random_data, ARRAY_COUNT(random_data));
+    } while (bsl_compute_ecc_sig(data, datasize, private_key, random_data, signature, identity) != BSL_OK);
 }
 
-s32 verify_ecc_signature(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4) {
-    s32 sp18;
+s32 verify_ecc_signature(u8* data, u32 datasize, u32* public_key, u32* signature, u32 identity) {
+    BSL_boolean res;
 
-    bsl_verify_ecc_sig(arg0, arg1, arg2, arg3, &sp18, arg4);
+    bsl_verify_ecc_sig(data, datasize, public_key, signature, &res, identity);
 
-    return sp18 == 0 ? 0 : -1;
+    return (res == BSL_TRUE) ? 0 : -1;
 }
 
 s32 func_9FC0374C(void) {
@@ -175,10 +177,10 @@ s32 dma_from_cart(s32 arg0, void* outBuf, s32 length, s32 direction) {
     return func_9FC0374C();
 }
 
-void aes_cbc_set_key_iv(s32* key, s32* iv) {
-    s32 expandedKey[AES_EXPANDED_KEY_LEN / 4];
+void aes_cbc_set_key_iv(BbAesKey* key, BbAesIv* iv) {
+    u32 expandedKey[AES_EXPANDED_KEY_LEN / 4];
 
-    aes_HwKeyExpand(key, &expandedKey);
+    aes_HwKeyExpand((u8*)key, (u8*)expandedKey);
     wordcopy((void*)PHYS_TO_K1(PI_AES_EXPANDED_KEY_BUF(0)), &expandedKey, AES_EXPANDED_KEY_LEN / 4);
     wordcopy((void*)PHYS_TO_K1(PI_AES_IV_BUF(0)), iv, 4);
 }

@@ -2,6 +2,7 @@
 #include "string.h"
 #include "bcp.h"
 #include "libcrypto/aes.h"
+#include "libcrypto/bsl.h"
 #include "libcrypto/sha1.h"
 #include "macros.h"
 
@@ -89,7 +90,7 @@ s32 func_9FC00BAC(BbTicketBundle* bundle) {
             bundle->ticket->head.ticketSign) >= 0) {
         memcpy(&contentMetaDataHead, cmdHead, sizeof(BbContentMetaDataHead));
         eccGenAesKey(head->serverKey, virage2_offset->privateKey, key1);
-        aes_SwDecrypt(key1, head->cmdIv, cmdHead->key, sizeof(BbAesKey), contentMetaDataHead.key);
+        aes_SwDecrypt((u8*)key1, (u8*)head->cmdIv, (u8*)cmdHead->key, sizeof(BbAesKey), (u8*)contentMetaDataHead.key);
 
         blocks[0].data = &bundle->ticket->cmd.contentDesc;
         blocks[0].size = sizeof(BbContentDesc);
@@ -103,7 +104,8 @@ s32 func_9FC00BAC(BbTicketBundle* bundle) {
                 ((BbRsaCert*) bundle->cmdChain[0])->exponent,
                 0,
                 bundle->ticket->cmd.head.contentMetaDataSign) >= 0) {
-            aes_SwDecrypt(virage2_offset->bootAppKey, cmdHead->commonCmdIv, contentMetaDataHead.key, sizeof(BbAesKey), key2);
+            aes_SwDecrypt((u8*)virage2_offset->bootAppKey, (u8*)cmdHead->commonCmdIv, (u8*)contentMetaDataHead.key,
+                          sizeof(BbAesKey), (u8*)key2);
             memcpy(contentMetaDataHead.key, key2, sizeof(BbAesKey));
 
             return 0;
@@ -205,9 +207,9 @@ s32 skLaunch(void* a0) {
 
         SHA1Reset(&sha1_ctx);
         SHA1Input(&sha1_ctx, ptr, contentMetaDataHead.size);
-        SHA1Result(&sha1_ctx, digest);
+        SHA1Result(&sha1_ctx, (u8*)&digest);
 
-        if (memcmp(digest, contentMetaDataHead.hash, sizeof(BbShaHash)) != 0) {
+        if (memcmp(&digest, contentMetaDataHead.hash, sizeof(BbShaHash)) != 0) {
             return -1;
         }
     }
@@ -300,11 +302,11 @@ s32 skRecryptBegin(BbTicketBundle* bundle, BbAppLaunchCrls* crls, RecryptList* r
     } else {
         D_9FC0F2DC = FALSE;
         aes_cbc_set_key_iv(&contentMetaDataHead.key, &contentMetaDataHead.iv);
-        aesCipherInit(&D_9FC0F2C8, 2, &contentMetaDataHead.iv);
+        aesCipherInit(&D_9FC0F2C8, 2, (u8*)&contentMetaDataHead.iv);
         recrypt_list_add_new_entry(recryptList, contentMetaDataHead.id, 3);
     }
 
-    aesMakeKey(&D_9FC0F0E0, 0, 128, &sp10);
+    aesMakeKey(&D_9FC0F0E0, 0, 128, (u8*)&sp10);
     SHA1Reset(&sha1_ctx);
     memcpy(&ticketHead, head, sizeof(BbTicketHead));
 
@@ -332,15 +334,15 @@ s32 func_9FC0134C(u8* buf, u32 size, s32 isRecrypt) {
         left = contentMetaDataHead.size - D_9FC0F0DC;
 
         if (left >= chunkSize) {
-            SHA1Input(&sha1_ctx, PHYS_TO_K1(PI_10000_BUF_START), chunkSize);
+            SHA1Input(&sha1_ctx, (u8*)PHYS_TO_K1(PI_10000_BUF_START), chunkSize);
             D_9FC0F0DC += chunkSize;
         } else {
-            SHA1Input(&sha1_ctx, PHYS_TO_K1(PI_10000_BUF_START), left);
+            SHA1Input(&sha1_ctx, (u8*)PHYS_TO_K1(PI_10000_BUF_START), left);
             D_9FC0F0DC = contentMetaDataHead.size;
         }
 
         if (isRecrypt) {
-            aesBlockEncrypt(&D_9FC0F2C8, &D_9FC0F0E0, PHYS_TO_K1(PI_10000_BUF_START), chunkSize * 8, buf);
+            aesBlockEncrypt(&D_9FC0F2C8, &D_9FC0F0E0, (u8*)PHYS_TO_K1(PI_10000_BUF_START), chunkSize * 8, buf);
         }
 
         buf += chunkSize;
@@ -366,7 +368,7 @@ s32 skRecryptData(u8* buf, u32 size) {
             iv2 = &contentMetaDataHead.iv;
         }
 
-        aesCipherInit(&D_9FC0F2C8, 2, iv1);
+        aesCipherInit(&D_9FC0F2C8, 2, (u8*)iv1);
         aes_cbc_set_key_iv(contentMetaDataHead.key, iv2);
 
         D_9FC0F2E0 = FALSE;
@@ -400,9 +402,9 @@ s32 skRecryptEnd(RecryptList* recryptList) {
         return -1;
     }
 
-    SHA1Result(&sha1_ctx, digest);
+    SHA1Result(&sha1_ctx, (u8*)&digest);
 
-    if (memcmp(digest, &contentMetaDataHead.hash, sizeof(BbShaHash)) != 0) {
+    if (memcmp(&digest, &contentMetaDataHead.hash, sizeof(BbShaHash)) != 0) {
         return -1;
     }
 

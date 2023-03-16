@@ -1,4 +1,3 @@
-#include "include_asm.h"
 #include "libcrypto/bb_nn.h"
 #include "macros.h"
 
@@ -132,7 +131,7 @@ void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c) {
     }
     t[1] = (t[1] - (u >> 0x10)) - v;
 
-    while (cHigh < t[1] || t[1] == cHigh && !(t[0] < (cLow << 0x10))) {
+    while (cHigh < t[1] || (t[1] == cHigh && !(t[0] < (cLow << 0x10)))) {
         temp = cLow << 0x10;
         t[0] -= temp;
         if (~temp < t[0]) {
@@ -451,16 +450,16 @@ void bigint_mod_mult(bigint_digit* a, bigint_digit* b, bigint_digit* c, bigint_d
  * via binary exponentiation (with both 2 and 4)
  */
 void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, bigint_digit* d, int dDigits) {
-    bigint_digit bPower[3][129];    // sp18, sp21C, sp420
-    bigint_digit ci;                //
-    bigint_digit t[129];            // sp628
-    int i;                          //
-    unsigned int ciBits;            //
-    unsigned int j;                 //
-    unsigned int s;                 //
-    bigint_digit exp;               //
-    unsigned int need[4];           // sp830[4]
-    bigint_digit setbits;           //
+    bigint_digit bPower[3][129];
+    bigint_digit ci;
+    bigint_digit t[129];
+    int i;
+    unsigned int ciBits;
+    unsigned int j;
+    unsigned int s;
+    bigint_digit exp;
+    unsigned int need[4];
+    bigint_digit setbits;
 
     need[0] = 1;
     need[1] = 1;
