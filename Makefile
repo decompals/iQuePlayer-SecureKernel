@@ -60,8 +60,8 @@ $(TARGET): $(ELF)
 	dd if=$(@:.bin=.tmp) of=$@ bs=16K conv=sync status=none
 	@$(RM) $(@:.bin=.tmp)
 
-$(ELF): $(O_FILES) sk.lcf undefined_syms.txt
-	$(LD) -T sk.lcf -T undefined_syms.txt --defsym start=0x9FC00000 -o $@ -Map $(@:.elf=.map)
+$(ELF): $(O_FILES) sk.lcf
+	$(LD) -T sk.lcf --defsym start=0x9FC00000 -o $@ -Map $(@:.elf=.map)
 
 build/asm/%.o: asm/%.s
 	$(AS) -march=vr4300 --no-pad-sections -I include $< -o $@

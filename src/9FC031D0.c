@@ -42,7 +42,11 @@ void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
     cur_proc_allowed_skc_bitmask = cmdHead->secureKernelRights;
 }
 
-void rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, s32 arg2, s32 arg3, s32 arg4, s32 arg5) {
+s32 rsa_check_signature(s32* digest, unsigned long* certpublickey, unsigned long certexponent, RsaSize rsaSize,
+                        unsigned long* certsign);
+
+s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, unsigned long* certpublickey,
+                          unsigned long certexponent, RsaSize rsaSize, unsigned long* certsign) {
     u8 digest[0x14];
     SHA1Context sha1ctx;
     s32 i;
@@ -54,11 +58,12 @@ void rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, s32 arg2,
         }
     }
     SHA1Result(&sha1ctx, digest);
-    rsa_check_signature(digest, arg2, arg3, arg4, arg5);
+    return rsa_check_signature(&digest, certpublickey, certexponent, rsaSize, certsign);
 }
 
 #ifdef NON_MATCHING
-s32 rsa_check_signature(u8* digest, unsigned long* certpublickey, unsigned long certexponent, RsaSize rsaSize, unsigned long* certsign) {
+s32 rsa_check_signature(u8* digest, unsigned long* certpublickey, unsigned long certexponent, RsaSize rsaSize,
+                        unsigned long* certsign) {
     char result[512];
     s32 rsaBits;
     u32 rsaBytes;
@@ -162,11 +167,11 @@ s32 func_9FC0374C(void) {
     return 0;
 }
 
-s32 dma_from_cart(s32 arg0, void* outBuf, s32 length, s32 direction) {
+s32 dma_from_cart(s32 bufSelect, void* outBuf, s32 length, s32 direction) {
     s32 cartAddr;
 
     IO_WRITE(PI_DRAM_ADDR_REG, outBuf);
-    IO_WRITE(PI_CART_ADDR_REG, arg0 ? 0x400 : 0);
+    IO_WRITE(PI_CART_ADDR_REG, (bufSelect) ? 0x400 : 0);
 
     if (!direction) {
         IO_WRITE(PI_EX_WR_LEN_REG, length - 1);
@@ -181,23 +186,20 @@ void aes_cbc_set_key_iv(BbAesKey* key, BbAesIv* iv) {
     u32 expandedKey[AES_EXPANDED_KEY_LEN / 4];
 
     aes_HwKeyExpand((u8*)key, (u8*)expandedKey);
-    wordcopy((void*)PHYS_TO_K1(PI_AES_EXPANDED_KEY_BUF(0)), &expandedKey, AES_EXPANDED_KEY_LEN / 4);
-    wordcopy((void*)PHYS_TO_K1(PI_AES_IV_BUF(0)), iv, 4);
+    wordcopy((void*)PHYS_TO_K1(PI_AES_EXPANDED_KEY_BUF(0)), &expandedKey, ARRAY_COUNT(expandedKey));
+    wordcopy((void*)PHYS_TO_K1(PI_AES_IV_BUF(0)), iv, ARRAY_COUNT(*iv));
 }
 
-void func_9FC0384C(s32 arg0, s32 arg1) {
-    s32 ctrl = 0;
+void func_9FC0384C(s32 bufSelect, s32 continuation) {
+    u32 ctrl = PI_AES_EXEC_CMD;
 
-    ctrl |= PI_AES_CMD;
-    ctrl |= arg0 << 0xE;
-
-    if (arg1) {
+    ctrl |= bufSelect << 14;
+    if (continuation) {
         ctrl |= 1;
     } else {
         ctrl |= 0x9A;
     }
-
-    ctrl |= 0x1F0000;
+    ctrl |= (0x200/0x10-1) << 16;
 
     IO_WRITE(PI_AES_CTRL_REG, ctrl);
 }

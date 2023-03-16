@@ -1,60 +1,89 @@
-#include "include_asm.h"
+#include "bbtypes.h"
+#include "string.h"
 #include "bcp.h"
+#include "libcrypto/aes.h"
+#include "libcrypto/sha1.h"
+#include "macros.h"
 
-// Info from K4D263238E-GC33 datasheet
-// Describes the init process using the MODE register
-// MODE register seems to be the only thing "native" to the DRAM, the others are for the memory controller?
+s32 write_virage2(void);
+s32 write_virage_data(u32, BbVirage2*, u32);
+u16* getTrialConsumptionByCid(u16 cid);
+void write_virage01_data(BbVirage01*);
+void set_virage01_selector(BbVirage01*);
+void set_proc_permissions(BbContentMetaDataHead* cmdHead);
+void aes_cbc_set_key_iv(BbAesKey* key, BbAesIv* iv);
+s32 dma_from_cart(s32 bufSelect, void* outBuf, s32 length, s32 direction);
+void startup(void);
+s32 card_read_block(u32 block, s32 bufSelect);
+s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, unsigned long* certpublickey,
+                         unsigned long certexponent, RsaSize rsaSize, unsigned long* certsign);
+s32 verify_cert_chain(BbRsaCert**, s32);
+s32 check_certs_against_revocation_list(BbContentMetaDataHead*, BbRsaCert**, BbAppLaunchCrls*);
+void func_9FC0384C(s32 arg0, s32 continuation);
+void osInvalDCache(void* buf, s32 len);
 
-#define RI_MODE_REG (RI_BASE_REG + 0x20)
+extern u16 D_9FC0EBB0;
+extern BbVirage01 D_9FC0F308;
+extern BbVirage2* virage2_offset;
+extern s32 g_trial_time_elapsed;
+extern s16 D_9FC0EBB2;
+extern u16 g_cur_proc_trial_type;
+extern s32 D_9FC0F304;
 
-// Extended Mode, the meaning of bits [11: 0] changes
-#define RI_MODE_NEXTENDED (0 << 13)
-#define RI_MODE_EXTENDED  (1 << 13) // TODO check shift
+#define SKRAM_START 0x9FC40000
 
-// Burst Length
-#define RI_MODE_BURST_LEN_2    ((1) << 0) // 0b001
-#define RI_MODE_BURST_LEN_4    ((2) << 0) // 0b010
-#define RI_MODE_BURST_LEN_8    ((3) << 0) // 0b011
-#define RI_MODE_BURST_LEN_PAGE ((7) << 0) // 0b111, valid only for Sequential Burst Type
+u32 func_9FC01B60(u32 regVal) {
+    u32 temp_v1 = (regVal >> 8) & 0xFF;
 
-// Burst Type
-#define RI_MODE_BT_SEQ    (0 << 3)
-#define RI_MODE_BT_INTERL (1 << 3)
+    if (temp_v1 == ((regVal >> 0x10) & 0xFF)) {
+        return temp_v1;
+    }
+    return regVal >> 0x18;
+}
 
-// CAS Latency
-#define RI_MODE_CAS_LATENCY_3 ((3) << 4)
-#define RI_MODE_CAS_LATENCY_4 ((4) << 4)
-#define RI_MODE_CAS_LATENCY_5 ((5) << 4)
+s32 func_9FC01B88(s32 blockNum) {
+    s32 ret;
+    s32 var_a0;
+    u32 var;
+    s32 i;
 
-// Test Mode
-#define RI_MODE_TM_NORMAL (0 << 7)
-#define RI_MODE_TM_TEST   (1 << 7)
+    while (TRUE) {
+        ret = card_read_block(blockNum << 5, 0);
+        if (ret == -3) {
+            return -3;
+        }
+        var = IO_READ(PI_10404_REG);
 
-// DLL
-#define RI_MODE_DLL_NRESET (0 << 8)
-#define RI_MODE_DLL_RESET  (1 << 8)
+        var_a0 = 0;
+        for (i = 0; i < 8; i++) {
+            if (!((var >> (16 + i)) & 1)) {
+                var_a0++;
+            }
+        }
 
-// Extended: DLL Enable
-#define RI_MODE_DLL_ENABLE  (0 << 0)
-#define RI_MODE_DLL_DISABLE (1 << 0)
+        blockNum++;
+        if (var_a0 < 2) {
+            break;
+        }
+    }
+    if (ret == -2) {
+        return -2;
+    }
+    return blockNum - 1;
+}
 
-// Extended: Driver Impedance Control
-#define RI_MODE_DIC_WEAK ((1 << 1) | (0 << 6))
+s32 func_9FC01C24(s32 blockStart, s32 nBlocks) {
+    s32 blockNum;
+    s32 i;
 
-// Command: Auto Refresh
-#define RI_MODE_CMD_AUTO_REFRESH  (1 << 30)
-#define RI_MODE_CMD_PRECHARGE_ALL (1 << 31)
-
-#define RI_30_REG   (RI_BASE_REG + 0x30)
-#define RI_40_REG   (RI_BASE_REG + 0x40)
-#define RI_60_REG   (RI_BASE_REG + 0x60)
-#define RI_80_REG   (RI_BASE_REG + 0x80)
-
-INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC01B60);
-
-INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC01B88);
-
-INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC01C24);
+    for (blockNum = blockStart, i = 0; nBlocks >= i; i++, blockNum++) {
+        blockNum = func_9FC01B88(blockNum);
+        if (blockNum < 0) {
+            break;
+        }
+    }
+    return blockNum - 1;
+}
 
 void dram_init(void) {
     s32 i;
@@ -90,16 +119,336 @@ void dram_init(void) {
     IO_READ(RI_30_REG);
 }
 
-INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC01D54);
+s32 verify_system_app(s32* blockPtr) {
+    BbAesKey decryptedKey;
+    BbRsaCert* certChain[3];
+    rsaDataBlock rsa;
+    s32 blockNum;
+    s32 i;
+    s32 j;
+    s32 ret;
+    BbContentMetaDataHead* cmd = (BbContentMetaDataHead*)SKRAM_START;
+    u32* skramPtr = (u32*)SKRAM_START;
+    BbAppLaunchCrls* appLaunchCrls;
 
-INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC01FBC);
+    ret = blockNum = func_9FC01C24(*blockPtr, 4);
+    if (ret < 0) {
+        return ret;
+    }
 
-INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC020C4);
+    for (i = 0; i < 32; i++) {
+        ret = card_read_block((blockNum << 5) + i, 0);
+        if (ret < 0) {
+            return ret;
+        }
 
-INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC022A8);
+        if (i == 0) {
+            u32 regVal = IO_READ(PI_10400_REG);
+            *blockPtr = func_9FC01B60(regVal);
+        }
 
-INCLUDE_ASM("asm/non_matchings/9FC01B60", func_9FC02488);
+        for (j = 0; j < 0x200; j += sizeof(*skramPtr)) {
+            *skramPtr++ = IO_READ(PI_10000_BUF(j));
+        }
+    }
 
-INCLUDE_ASM("asm/non_matchings/9FC01B60", write_virage2);
+    certChain[0] = (BbRsaCert*)(cmd + 1);
+    certChain[1] = (BbRsaCert*)(certChain[0] + 1);
+    certChain[2] = NULL;
 
-INCLUDE_ASM("asm/non_matchings/9FC01B60", check_trial_timer);
+    appLaunchCrls = (BbAppLaunchCrls*)(SKRAM_START + sizeof(*cmd) + (ARRAY_COUNT(certChain) - 1) * sizeof(BbRsaCert));
+
+#define RELOCATE_PTR(field) { (field) = (void*)((u8*)(field) + SKRAM_START); }(void)0
+
+    if (appLaunchCrls->carl.head != NULL) {
+        RELOCATE_PTR(appLaunchCrls->carl.head);
+    }
+    RELOCATE_PTR(appLaunchCrls->carl.list);
+    RELOCATE_PTR(appLaunchCrls->carl.certChain[0]);
+    RELOCATE_PTR(appLaunchCrls->carl.certChain[1]);
+
+    if (appLaunchCrls->cprl.head != NULL) {
+        RELOCATE_PTR(appLaunchCrls->cprl.head);
+    }
+    RELOCATE_PTR(appLaunchCrls->cprl.list);
+    RELOCATE_PTR(appLaunchCrls->cprl.certChain[0]);
+    RELOCATE_PTR(appLaunchCrls->cprl.certChain[1]);
+
+    if (check_certs_against_revocation_list(cmd, certChain, appLaunchCrls) < 0) {
+        return -1;
+    }
+    if (verify_cert_chain(certChain, 2) < 0) {
+        return -1;
+    }
+
+    rsa.data = (void*)cmd;
+    rsa.size = sizeof(*cmd) - sizeof(cmd->contentMetaDataSign);
+
+    if (rsa_verify_signature(&rsa, 1, (void*)&certChain[0]->publicKey, certChain[0]->exponent, RSA_2048, cmd->contentMetaDataSign) < 0) {
+        return -1;
+    }
+    if (aes_SwDecrypt((u8*)&virage2_offset->bootAppKey, (u8*)cmd->commonCmdIv, (u8*)cmd->key, sizeof(cmd->key), (u8*)&decryptedKey) < 0) {
+        return -1;
+    }
+
+    memcpy(cmd->key, &decryptedKey, sizeof(cmd->key));
+
+    if (cmd->bbid != 0 && cmd->bbid != virage2_offset->bbId) {
+        return -1;
+    }
+    return 0;
+}
+
+s32 func_9FC01FBC(s32 block, s32 bufSelect, s32 continuation, void** outBufPtr, u32 length, SHA1Context* sha1ctx, s32 arg6) {
+    s32 ret;
+    void** var_s0;
+
+    ret = card_read_block(block, bufSelect);
+    if (ret < 0) {
+        return ret;
+    }
+
+    func_9FC0384C(bufSelect, continuation);
+
+    while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY) {
+        ;
+    }
+
+    if (arg6) {
+        var_s0 = (void**)PHYS_TO_K1((bufSelect != 0) ? PI_10000_BUF(0x208) : PI_10000_BUF(8));
+
+        if (check_untrusted_ptr_range(*var_s0, 0, ALIGNOF(*var_s0)) == 0) {
+            return -1;
+        }
+        *outBufPtr = (void*)KDM_TO_PHYS(*var_s0);
+    }
+    osInvalDCache((void*)PHYS_TO_K0(*outBufPtr), 0x200);
+
+    ret = dma_from_cart(bufSelect, *outBufPtr, length, 0/*Read*/);
+    if (ret < 0) {
+        return ret;
+    }
+    SHA1Input(sha1ctx, (void*)PHYS_TO_K0(*outBufPtr), length);
+    return 0;
+}
+
+s32 load_system_app(u32* systemAppEntrypointOut) {
+    BbContentMetaDataHead* cmd = (BbContentMetaDataHead*)0x9FC40000;
+    SHA1Context sha1ctx;
+    BbShaHash systemAppHash;
+    s32 blockStart = 0;
+    void* bufPtr;
+    s32 aesContinuation;
+    s32 ret;
+    u32 endBlock;
+    u32 i;
+    u32 j;
+    u32 remaining;
+    u32 length;
+    u32 block;
+
+    ret = verify_system_app(&blockStart);
+    if (ret < 0) {
+        return ret;
+    }
+
+    endBlock = (cmd->size + 0x200) / 0x200;
+
+    aes_cbc_set_key_iv(&cmd->key, &cmd->iv);
+    SHA1Reset(&sha1ctx);
+
+    aesContinuation = FALSE;
+    length = 0x200;
+    for (i = 0; i < 8; i++) {
+        block = (blockStart << 5) + i;
+        ret = func_9FC01FBC(block, 0, aesContinuation, &bufPtr, length, &sha1ctx, i == 0);
+        if (ret < 0) {
+            return ret;
+        }
+        aesContinuation = TRUE;
+        if (i == 0) {
+            *systemAppEntrypointOut = *(u32*)PHYS_TO_K0((u32)bufPtr + 8);
+        }
+    }
+
+    remaining = cmd->size - 0x1000;
+    for (j = i; j < endBlock; j++) {
+        block = (blockStart << 5) + i;
+        if (remaining > 0x200) {
+            length = 0x200;
+            remaining -= 0x200;
+        } else {
+            length = remaining;
+            remaining = 0;
+        }
+
+        ret = func_9FC01FBC(block, 0, 1, &bufPtr, length, &sha1ctx, 0);
+        if (ret < 0) {
+            return ret;
+        }
+
+        if (i++ == 31) {
+            i = 0;
+            blockStart = func_9FC01B60(IO_READ(PI_10400_REG));
+        }
+        bufPtr += 0x200;
+    }
+
+    SHA1Result(&sha1ctx, (u8*)&systemAppHash);
+    if (memcmp(&systemAppHash, cmd->hash, sizeof(systemAppHash)) != 0) {
+        return -1;
+    }
+    set_proc_permissions(cmd);
+    return ret;
+}
+
+#define THROW_EXCEPTION() \
+    ((void (*)())PHYS_TO_K1(R_VEC + 0x200 + E_VEC))()
+
+u32 func_9FC022A8(void) {
+    u32 systemAppEntrypoint;
+
+    IO_WRITE(PI_MISC_REG, 0x31);
+    IO_WRITE(MI_3C_REG, 0x01000000);
+    IO_WRITE(MI_SK_EXCEPTION_REG, IO_READ(MI_SK_EXCEPTION_REG) & 0xFDFFFFFF);
+    IO_WRITE(MI_18_REG, 0);
+    IO_WRITE(PI_STATUS_REG, PI_CLR_INTR | PI_SET_RESET); // reset PI
+    IO_WRITE(PI_CARD_CNT_REG, 0);
+    IO_WRITE(PI_AES_CTRL_REG, 0);
+    IO_WRITE(VI_CURRENT_REG, 0); // clears VI interrupt
+    IO_WRITE(SP_STATUS_REG, SP_CLR_RSPSIGNAL | SP_CLR_INTR);
+    IO_WRITE(AI_STATUS_REG, AI_CONTROL_DMA_ON);
+    IO_WRITE(SI_STATUS_REG, 0); // clears SI interrupt
+    IO_WRITE(MI_MODE_REG, MI_CLR_DP_INTR);
+    IO_WRITE(MI_INTR_MASK_REG, MI_INTR_MASK_CLR_SP | MI_INTR_MASK_CLR_SI | MI_INTR_MASK_CLR_AI | MI_INTR_MASK_CLR_VI |
+            MI_INTR_MASK_CLR_PI | MI_INTR_MASK_CLR_DP);
+    IO_WRITE(MI_3C_REG, 0x05555000); // clears ique specific interrupts
+
+    set_virage01_selector(&D_9FC0F308);
+
+    if ((IO_READ(MI_SK_EXCEPTION_REG) & 0xFC) || g_cur_proc_trial_type == 0) {
+        if (D_9FC0EBB0 != 0xFFFF) {
+            u16* temp_v0 = getTrialConsumptionByCid(D_9FC0EBB0);
+            if (temp_v0 != NULL) {
+                *temp_v0 = D_9FC0EBB2;
+                write_virage01_data(&D_9FC0F308);
+            }
+            g_cur_proc_trial_type = 0xFFFF;
+            D_9FC0EBB0 = 0xFFFF;
+        }
+    } else {
+        dram_init();
+    }
+    if (write_virage2() != 0) {
+        THROW_EXCEPTION();
+    }
+    if (load_system_app(&systemAppEntrypoint) != 0) {
+        THROW_EXCEPTION();
+    }
+    IO_WRITE(PI_MISC_REG, 0x33);
+    g_cur_proc_trial_type = 0xFFFF;
+    return systemAppEntrypoint;
+}
+
+s32 func_9FC02488(BbShaHash* skHashOut) {
+    SHA1Context sha1ctx;
+    s32 i;
+    s32 blockNum;
+    s32 remainingBlocks;
+    s32 var_s3 = 0;
+    s32 ret;
+
+    SHA1Reset(&sha1ctx);
+    blockNum = 0;
+    remainingBlocks = 0x80;
+    while (remainingBlocks > 0) {
+        blockNum = func_9FC01B88(blockNum);
+        if (blockNum < 0) {
+            return blockNum;
+        }
+        var_s3++;
+
+        for (i = 0; i < 32; i++) {
+            if (i == 0) {
+                if (var_s3 == 1) {
+                    func_9FC0384C(0, FALSE);
+                } else {
+                    func_9FC0384C(0, TRUE);
+                }
+            } else {
+                ret = card_read_block((blockNum << 5) + i, 0);
+                if (ret < 0) {
+                    return ret;
+                }
+                func_9FC0384C(0, TRUE);
+            }
+
+            while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY) {
+                ;
+            }
+
+            SHA1Input(&sha1ctx, (void*)PHYS_TO_K1(PI_10000_BUF(0)), 0x200);
+            remainingBlocks--;
+            if (remainingBlocks == 0) {
+                break;
+            }
+        }
+        blockNum++;
+    }
+
+    SHA1Result(&sha1ctx, (u8*)skHashOut);
+    return 0;
+}
+
+s32 write_virage2(void) {
+    BbShaHash skHash;
+    u32 checksum;
+    s32 ret;
+    u32 i;
+    u32* v2words;
+
+    if (virage2_offset->romPatch[0] == 0x01000008) { // jr $t0
+        return 0;
+    }
+
+    // Compute SK hash
+    ret = func_9FC02488(&skHash);
+    if (ret != 0) {
+        return ret;
+    }
+
+    // Copy new hash and `jr $t0` to Virage2
+    wordcopy(&virage2_offset->skHash, &skHash, ARRAY_COUNT(skHash));
+    virage2_offset->romPatch[0] = 0x01000008; // jr $t0
+
+    // Recompute checksum
+    virage2_offset->csumAdjust = 0;
+    v2words = (u32*)virage2_offset;
+    for (i = 0, checksum = 0; i < 0x40; i++) {
+        checksum += *v2words++;
+    }
+    virage2_offset->csumAdjust = 0xBBC0DE - checksum;
+
+    // Write data
+    ret = write_virage_data(0x1FCAC000, virage2_offset, 0x40);
+    if (ret >= 0) {
+        ret = 0;
+    }
+    return ret;
+}
+
+s32 check_trial_timer(void) {
+    u32 temp_s0;
+
+    g_trial_time_elapsed++;
+    temp_s0 = g_trial_time_elapsed * 16;
+    D_9FC0EBB2 = (temp_s0 + 30) / 60;
+    if (g_cur_proc_trial_type == 0) {
+        startup();
+    }
+    if (temp_s0 >= D_9FC0F304 * 60) {
+        startup();
+    }
+    IO_WRITE(MI_18_REG, 0x7530C800);
+    return 0;
+}

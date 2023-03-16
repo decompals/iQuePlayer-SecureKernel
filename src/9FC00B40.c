@@ -322,7 +322,7 @@ s32 func_9FC0134C(u8* buf, u32 size, s32 isRecrypt) {
     u32 i;
 
     for (i = 0; i < size; i += chunkSize) {
-        if (dma_from_cart(FALSE, K0_TO_PHYS(buf), chunkSize, TRUE) < 0) {
+        if (dma_from_cart(0, K0_TO_PHYS(buf), chunkSize, TRUE) < 0) {
             return -1;
         }
 
