@@ -19,17 +19,17 @@ typedef struct {
 
 // internal
 
-int aesMakeKey(AesKeyInstance* key, u8 direction, int keyLen, u8* keyMaterial);
-int aesCipherInit(AesCipherInstance* cipher, u8 mode, u8* IV);
-int aesBlockEncrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, int inputLen, u8* outBuffer);
-int aesBlockDecrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, int inputLen, u8* outBuffer);
-
 int rijndaelKeySetupEnc(u32* rk, u8* cipherKey, int keyBits);
 int rijndaelKeySetupDec(u32* rk, u8* cipherKey, int keyBits);
 void rijndaelEncrypt(u32* rk, int Nr, u8* pt, u8* ct);
 void rijndaelDecrypt(u32* rk, int Nr, u8* ct, u8* pt);
 
 // public
+
+int aesMakeKey(AesKeyInstance* key, u8 direction, int keyLen, u8* keyMaterial);
+int aesCipherInit(AesCipherInstance* cipher, u8 mode, u8* IV);
+int aesBlockEncrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, int inputLen, u8* outBuffer);
+int aesBlockDecrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, int inputLen, u8* outBuffer);
 
 int aes_HwKeyExpand(u8* key, u8* expandedKey);
 int aes_SwEncrypt(u8* key, u8* iv, u8* in, u32 size, u8* out);

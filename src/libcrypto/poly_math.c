@@ -1,6 +1,5 @@
 #include "include_asm.h"
-#include "libcrypto/bb_nn.h"
-#include "bbtypes.h"
+#include "libcrypto/poly_math.h"
 #include "macros.h"
 
 void null(field_2n* a) {
@@ -84,10 +83,44 @@ void multiply_shift(field_double* a) {
     }
 }
 
+void poly_mul_partial(field_2n* a, field_2n* b, field_double* c);
+#if 0
+    short int i;
+    short int bit_count;
+    short int word;
+    element mask;
+    field_double local_b;
+    int k;
+    int num_shift;
+    int b_start;
+    element* eptr;
+    element temp;
+    element bit;
+    element* local_bptr;
+    element* cptr;
+    field_double bprep[16];
+    element multiplier;
+#endif
 INCLUDE_ASM("asm/non_matchings/libcrypto/poly_math", poly_mul_partial);
 
+void multiply_shift_n(field_double* a, int n);
+#if 0
+    element* eptr;
+    element temp;
+    element bit;
+    short int i;
+    short int num_words_shift;
+#endif
 INCLUDE_ASM("asm/non_matchings/libcrypto/poly_math", multiply_shift_n);
 
+void divide_shift_n(field_double* a, int n);
+#if 0
+    element* eptr;
+    element temp;
+    element bit;
+    short int i;
+    short int num_words_shift;
+#endif
 INCLUDE_ASM("asm/non_matchings/libcrypto/poly_math", divide_shift_n);
 
 void extract_masked_bits(field_double* a, field_double* mask, field_double* result) {
@@ -227,6 +260,21 @@ void is_less_than(field_2n* a, field_2n* b, BSL_boolean* result) {
     }
 }
 
+void poly_inv(field_2n* a, field_2n* dest);
+#if 0
+    field_2n f;
+    field_2n b;
+    field_2n c;
+    field_2n g;
+    short i;
+    short j;
+    short m;
+    short n;
+    short f_top;
+    short c_top;
+    element bits;
+    unsigned int longword;
+#endif
 INCLUDE_ASM("asm/non_matchings/libcrypto/poly_math", poly_inv);
 
 void poly_rot_right(field_2n* a) {

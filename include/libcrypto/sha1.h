@@ -10,4 +10,8 @@ typedef struct SHA1Context {
   /* 0x1C */ u32 data[16];
 } SHA1Context; // size = 0x5C
 
+int SHA1Reset(SHA1Context* ctx);
+int SHA1Input(SHA1Context* ctx, u8* buffer, int count);
+int SHA1Result(SHA1Context* ctx, u8* digest);
+
 #endif

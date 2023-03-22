@@ -38,7 +38,8 @@ void recrypt_list_decrypt_entry(RecryptListEntry* entry, RecryptList* list, u32 
     for(i = 0; i < ARRAY_COUNT(recryptListEntryIv); i++) {
         recryptListEntryIv[i] = virage2_offset->bbId + i;
     }
-    aes_SwDecrypt(virage2_offset->recryptListKey, recryptListEntryIv, &list->entries[index], sizeof(RecryptListEntry), entry);
+    aes_SwDecrypt((u8*)virage2_offset->recryptListKey, (u8*)recryptListEntryIv, (u8*)&list->entries[index],
+                  sizeof(RecryptListEntry), (u8*)entry);
 }
 
 void recrypt_list_add_entry(RecryptListEntry* entry, RecryptList* list, u32 entryIndex) {
@@ -49,7 +50,8 @@ void recrypt_list_add_entry(RecryptListEntry* entry, RecryptList* list, u32 entr
     for(i = 0; i < ARRAY_COUNT(recryptListEntryIv); i++) {
         recryptListEntryIv[i] = virage2_offset->bbId + i;
     }
-    aes_SwEncrypt(virage2_offset->recryptListKey, recryptListEntryIv, entry, sizeof(RecryptListEntry), encryptedRecryptListEntry);
+    aes_SwEncrypt((u8*)virage2_offset->recryptListKey, (u8*)recryptListEntryIv, (u8*)entry, sizeof(RecryptListEntry),
+                  (u8*)encryptedRecryptListEntry);
     memcpy(&list->entries[entryIndex], encryptedRecryptListEntry, sizeof(RecryptListEntry));
 }
 
