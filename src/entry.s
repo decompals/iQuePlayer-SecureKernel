@@ -143,7 +143,7 @@ LEAF(func_9FC00470)
     mfhi    t0
     sd      t0, 0x130(sp)
 
-    la      gp, D_9FC16D20
+    la      gp, _gp
 
     la      t2, icache_init
     cache   (CACH_PI | C_FILL), (t2)
@@ -291,7 +291,7 @@ LEAF(func_9FC0068C)
     sd      a2, 0x40(sp)
     sd      a3, 0x48(sp)
 
-    la      gp, D_9FC16D20
+    la      gp, _gp
 
     la      t2, icache_init
     cache   (CACH_PI | C_FILL), (t2)
@@ -395,7 +395,7 @@ LEAF(func_9FC008D8)
     li      k1, K1BASE
     or      sp, k1
 
-    la      gp, D_9FC16D20
+    la      gp, _gp
 
     la      t2, icache_init
     cache   (CACH_PI | C_FILL), (t2)

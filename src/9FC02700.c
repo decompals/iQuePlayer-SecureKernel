@@ -345,54 +345,59 @@ s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrl
     return 0;
 }
 
-s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBase** chain, BbCrlBundle* arg2) {
+s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBase** chain,
+                                        BbAppLaunchCrls* appLaunchCrls) {
     s32 ret;
     u32 i;
 
-    if (arg2[1].head != NULL) {
-        if (!CHECK_SKRAM_RANGE(arg2[1].head)){
+    if (appLaunchCrls->carl.head != NULL) {
+        if (!CHECK_SKRAM_RANGE(appLaunchCrls->carl.head)){
             return -1;
         }
 
-        if (check_unknown_range(arg2[1].list, arg2[1].head->numberRevoked * sizeof(BbServerSuffix), 4) == 0) {
-            return -1;
-        }
-    }
-
-    if (arg2[2].head != NULL) {
-        if (!CHECK_SKRAM_RANGE(arg2[2].head)){
-            return -1;
-        }
-
-        if (check_unknown_range(arg2[2].list, arg2[2].head->numberRevoked * sizeof(BbServerSuffix), 4) == 0) {
-            return -1;
-        }
-
-        if (!CHECK_SKRAM_RANGE(arg2[2].certChain)) {
-            return -1;
-        }
-
-        if (!CHECK_SKRAM_RANGE((BbRsaCert*)arg2[2].certChain[0])) {
+        if (check_unknown_range(appLaunchCrls->carl.list,
+                                appLaunchCrls->carl.head->numberRevoked * sizeof(BbServerSuffix), 4) == 0) {
             return -1;
         }
     }
 
-    ret = verify_all_crlbundles(&arg2[1], cmdHead->caCrlVersion, &arg2[2], cmdHead->cpCrlVersion, &arg2[0], -1);
+    if (appLaunchCrls->cprl.head != NULL) {
+        if (!CHECK_SKRAM_RANGE(appLaunchCrls->cprl.head)){
+            return -1;
+        }
+
+        if (check_unknown_range(appLaunchCrls->cprl.list,
+                                appLaunchCrls->cprl.head->numberRevoked * sizeof(BbServerSuffix), 4) == 0) {
+            return -1;
+        }
+
+        if (!CHECK_SKRAM_RANGE(appLaunchCrls->cprl.certChain)) {
+            return -1;
+        }
+
+        if (!CHECK_SKRAM_RANGE((BbRsaCert*)appLaunchCrls->cprl.certChain[0])) {
+            return -1;
+        }
+    }
+
+    ret = verify_all_crlbundles(&appLaunchCrls->carl, cmdHead->caCrlVersion,
+                                &appLaunchCrls->cprl, cmdHead->cpCrlVersion,
+                                &appLaunchCrls->tsrl, -1);
     if (ret != 0) {
         return ret;
     }
 
-    if (arg2[1].head != NULL) {
-        for (i = 0; i < arg2[1].head->numberRevoked; i++) {
-            if (strstr(chain[1]->name.server, arg2[1].list[i]) != 0) {
+    if (appLaunchCrls->carl.head != NULL) {
+        for (i = 0; i < appLaunchCrls->carl.head->numberRevoked; i++) {
+            if (strstr(chain[1]->name.server, appLaunchCrls->carl.list[i]) != 0) {
                 return -9;
             }
         }
     }
 
-    if (arg2[2].head != NULL) {
-        for (i = 0; i < arg2[2].head->numberRevoked; i++) {
-            if (strstr(chain[0]->name.server, arg2[2].list[i]) != 0) {
+    if (appLaunchCrls->cprl.head != NULL) {
+        for (i = 0; i < appLaunchCrls->cprl.head->numberRevoked; i++) {
+            if (strstr(chain[0]->name.server, appLaunchCrls->cprl.list[i]) != 0) {
                 return -9;
             }
         }

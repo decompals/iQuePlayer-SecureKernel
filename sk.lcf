@@ -48,6 +48,8 @@ SECTIONS {
         __bss_end = .;
     }
 
+    _gp = __bss_start + 0x8000 - 0x10;
+
     /DISCARD/ :
     {
         *(*);
