@@ -305,7 +305,7 @@ u32 setup_system(void) {
 
     if ((IO_READ(MI_SK_EXCEPTION_REG) & 0xFC) || g_cur_proc_trial_type == 0) {
         if (D_9FC0EBB0 != 0xFFFF) {
-            u16* temp_v0 = getTrialConsumptionByCid(D_9FC0EBB0);
+            u16* temp_v0 = getTrialConsumptionByTid(D_9FC0EBB0);
             if (temp_v0 != NULL) {
                 *temp_v0 = D_9FC0EBB2;
                 write_virage01_data(&D_9FC0F308);

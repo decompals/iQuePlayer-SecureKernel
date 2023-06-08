@@ -440,7 +440,7 @@ s32 set_virage01_selector(BbVirage01* virageData) {
 
 extern BbVirage01 D_9FC0F308;
 
-u16 *getTrialConsumptionByCid(BbTicketId tid) {
+u16 *getTrialConsumptionByTid(BbTicketId tid) {
     tid &= 0x7FFF;
 
     if ((tid < D_9FC0F308.tidWindow) || (tid >= (s32)(D_9FC0F308.tidWindow + ARRAY_COUNT(D_9FC0F308.cc)))) {

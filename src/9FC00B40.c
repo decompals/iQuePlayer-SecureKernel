@@ -62,7 +62,7 @@ s32 func_9FC00BAC(BbTicketBundle* bundle) {
     tid = head->tid;
 
     if (tid < 0) {
-        cc = getTrialConsumptionByCid(head->tid);
+        cc = getTrialConsumptionByTid(head->tid);
 
         if (cc == NULL) {
             return -1;
@@ -212,7 +212,7 @@ s32 skLaunch(void* app_entrypoint) {
     D_9FC0F304 = ticketHead.limit;
 
     if ((s16) ticketHead.tid < 0) {
-        cc = getTrialConsumptionByCid(ticketHead.tid);
+        cc = getTrialConsumptionByTid(ticketHead.tid);
 
         if (cc == NULL) {
             return -1;

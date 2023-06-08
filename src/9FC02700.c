@@ -61,7 +61,7 @@ s32 verify_cert_signature(BbCertBase* toVerify, BbRsaCert* toVeryifyAgainst) {
     }
 
     if (strcmp((const char*)toVerify->issuer, "Root") == 0) {
-        return rsa_verify_signature(&dataBlock, 1, pubkey, exponent, 1, signature);
+        return rsa_verify_signature(&dataBlock, 1, rootRSAPublicKey, rootRSAExponent, 1, signature);
     } else if ((u32)toVerify->sigType < 2u) {
         return rsa_verify_signature(&dataBlock, 1, toVeryifyAgainst->publicKey, toVeryifyAgainst->exponent, toVerify->sigType, signature);
     }

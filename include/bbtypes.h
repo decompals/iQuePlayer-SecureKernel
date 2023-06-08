@@ -218,7 +218,7 @@ s32 check_unknown_range(void* ptr, u32 size, u32 alignment);
 void startup(void);
 void launch_app_trampoline(void);
 s32 write_virage01_data(BbVirage01* virageData);
-u16* getTrialConsumptionByCid(u16 cid);
+u16* getTrialConsumptionByTid(u16 tid);
 s32 verify_cert_chain(BbCertBase** certChain, s32 serverType);
 s32 check_cert_ranges(BbCertBase**);
 s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrls* crls);
@@ -254,9 +254,8 @@ s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32*
                          RsaSize rsaSize, u32* certsign);
 s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexponent, RsaSize rsaSize, u32* certsign);
 
-// TODO rename these
-extern const u32 pubkey[];
-extern const u32 exponent;
+extern const u32 rootRSAPublicKey[];
+extern const u32 rootRSAExponent;
 
 extern BbVirage2* virage2_offset;
 extern u16 D_9FC0EBB0;

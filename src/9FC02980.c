@@ -146,7 +146,7 @@ s32 verify_crlbundle(BbCrlBundle* bundle, u32 type, u32 requiredVersion) {
     dataBlocks[1].size = bundle->head->numberRevoked * sizeof(BbServerSuffix);
 
     if (strcmp((const char*)bundle->head->issuer, "Root") == 0) {
-        ret = rsa_verify_signature(dataBlocks, ARRAY_COUNT(dataBlocks), pubkey, exponent, 1, (u32*)&bundle->head->signature);
+        ret = rsa_verify_signature(dataBlocks, ARRAY_COUNT(dataBlocks), rootRSAPublicKey, rootRSAExponent, 1, (u32*)&bundle->head->signature);
     } else {
         cert = (BbRsaCert*) bundle->certChain[0];
         ret = rsa_verify_signature(dataBlocks, ARRAY_COUNT(dataBlocks), cert->publicKey, cert->exponent, bundle->head->sigType, (u32*)&bundle->head->signature);
