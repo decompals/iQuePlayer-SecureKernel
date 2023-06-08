@@ -3,17 +3,12 @@
 #include "libcrypto/aes.h"
 #include "macros.h"
 
-extern BbVirage2* virage2_offset;
-
-void virage2_gen_public_key(u32* pubkeyOut);
-
 s32 recrypt_list_verify_ecc_sig(RecryptList* list) {
     BbEccPublicKey publicKey;
-    u32 size;
+    u32 size = list->numEntries * sizeof(RecryptListEntry) + 4;
 
-    size = list->numEntries * sizeof(RecryptListEntry) + 4;
     virage2_gen_public_key(publicKey);
-    if (verify_ecc_signature(&list->numEntries, size, publicKey, list->signature, 0x06091968) != 0) {
+    if (verify_ecc_signature((u8*)&list->numEntries, size, publicKey, list->signature, 0x06091968) != 0) {
         return -1;
     }
 
@@ -21,7 +16,7 @@ s32 recrypt_list_verify_ecc_sig(RecryptList* list) {
 }
 
 void recrypt_list_sign(RecryptList* list) {
-    func_9FC03694(&list->numEntries, list->numEntries * sizeof(RecryptListEntry) + 4, virage2_offset->privateKey, list->signature, 0x06091968);
+    func_9FC03694((u8*)&list->numEntries, list->numEntries * sizeof(RecryptListEntry) + 4, virage2_offset->privateKey, &list->signature, 0x06091968);
 }
 
 s32 recrypt_list_clear(RecryptList* list) {
@@ -55,12 +50,12 @@ void recrypt_list_add_entry(RecryptListEntry* entry, RecryptList* list, u32 entr
     memcpy(&list->entries[entryIndex], encryptedRecryptListEntry, sizeof(RecryptListEntry));
 }
 
-s32 recrypt_list_get_entry_for_cid(RecryptList* list, s32 contentId, RecryptListEntry* entry) {
+s32 recrypt_list_get_entry_for_cid(RecryptList* list, BbContentId contentId, RecryptListEntry* entry) {
     u32 i;
 
-    for(i = 0; i < list->numEntries; i++) {
+    for (i = 0; i < (u32)list->numEntries; i++) {
         recrypt_list_decrypt_entry(entry, list, i);
-        if(entry->contentId == contentId) {
+        if (entry->contentId == contentId) {
         	return i;
         }
     }
@@ -76,7 +71,7 @@ s32 recrypt_list_verify_size_and_sig(RecryptList* list) {
     return -1;
 }
 
-s32 recrypt_list_add_new_entry(RecryptList* list, s32 contentId, s32 arg2) {
+s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, u32 arg2) {
     RecryptListEntry entry;
     s32 index;
 
@@ -96,7 +91,7 @@ s32 recrypt_list_add_new_entry(RecryptList* list, s32 contentId, s32 arg2) {
     return 0;
 }
 
-s32 recrypt_list_get_key_for_cid(RecryptList* list, BbAesKey* key, s32 contentId) {
+s32 recrypt_list_get_key_for_cid(RecryptList* list, BbAesKey* key, BbContentId contentId) {
     RecryptListEntry entry;
     s32 var_s1;
 

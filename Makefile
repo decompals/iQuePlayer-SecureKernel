@@ -2,22 +2,48 @@ TARGET := build/sk.bin
 ELF := $(TARGET:.bin=.elf)
 
 COMPARE ?= 1
+ORIG_COMPILER ?= 1 # switch to 0 for modern GCC
 
 CROSS := mips-linux-gnu-
 
-export COMPILER_PATH := tools/egcs/
-CC      := $(COMPILER_PATH)gcc
+INC := -I include -I include/PR -I include/sys -I src
+
+# use env so we can use host cpp instead of ancient egcs cpp that doesn't work
+CPP := env COMPILER_PATH= cpp
+CPPFLAGS := -x c -fno-dollars-in-identifiers -P
+
+ifeq ($(ORIG_COMPILER), 0)
+  COMPARE := 0
+  CC      := $(CROSS)gcc
+  CFLAGS  := $(INC) -G 0 -nostdinc -DNON_MATCHING -std=gnu99 -march=vr4300 -mtune=vr4300 -fno-PIC -mno-abicalls -mips3 -ffunction-sections -fdata-sections -mgp32 -fno-common -fno-builtin -ffreestanding
+  ASFLAGS := $(INC) -G 0 -nostdinc -DNON_MATCHING -std=gnu99 -march=vr4300 -mtune=vr4300 -fno-PIC -mno-abicalls -mips3
+
+  CFLAGS  += -Wall -Wextra -pedantic
+  CPPFLAGS += -DNON_MATCHING
+
+  LD      := $(CC)
+  LDFLAGS  = -nostdlib -Wl,--gc-sections -Wl,-Map,$(@:.elf=.map)# -Wl,--print-gc-sections
+else
+  export COMPILER_PATH := tools/egcs/
+  CC      := $(COMPILER_PATH)gcc
+  CFLAGS  := $(INC) -G 0 -nostdinc -D_MIPS_SZLONG=32 -mcpu=4300 -fno-PIC -mno-abicalls -mips2 -mgp32 -fno-builtin
+  ASFLAGS := $(INC) -G 0 -nostdinc -D_MIPS_SZLONG=32 -mcpu=4300 -fno-PIC -mno-abicalls -mips2
+
+  CFLAGS  += -Wall
+
+  LD      := $(CROSS)ld
+  LDFLAGS  = -Map $(@:.elf=.map)
+endif
+
+CFLAGS += -D_LANGUAGE_C
+ASFLAGS += -D_LANGUAGE_ASSEMBLY
+
+OPTFLAGS := -Os -g3
 
 AS      := $(CROSS)as
-LD      := $(CROSS)ld
 OBJCOPY := $(CROSS)objcopy
 OBJDUMP := $(CROSS)objdump
 STRIP   := $(CROSS)strip
-
-INC := -I include -I include/PR -I include/sys -I src
-CFLAGS := $(INC) -D_MIPS_SZLONG=32 -D_LANGUAGE_C -nostdinc -fno-builtin -fno-PIC -mno-abicalls -mcpu=4300 -G 0 -mgp32 -mips2 -Wall
-ASFLAGS := $(INC) -D_MIPS_SZLONG=32 -D_LANGUAGE_ASSEMBLY -nostdinc -fno-PIC -mno-abicalls -mcpu=4300 -G 0 -mips2
-OPTFLAGS := -Os -g3
 
 # Source dirs
 SRC_DIRS := $(shell find src -type d)
@@ -60,8 +86,11 @@ $(TARGET): $(ELF)
 	dd if=$(@:.bin=.tmp) of=$@ bs=16K conv=sync status=none
 	@$(RM) $(@:.bin=.tmp)
 
-$(ELF): $(O_FILES) sk.lcf
-	$(LD) -T sk.lcf --defsym start=0x9FC00000 -o $@ -Map $(@:.elf=.map)
+build/sk.lcf: sk.lcf
+	$(CPP) $(CPPFLAGS) $< -o $@
+
+$(ELF): $(O_FILES) build/sk.lcf
+	$(LD) $(LDFLAGS) -T build/sk.lcf -o $@
 
 build/asm/%.o: asm/%.s
 	$(AS) -march=vr4300 --no-pad-sections -I include $< -o $@

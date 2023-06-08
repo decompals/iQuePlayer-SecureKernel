@@ -1,4 +1,3 @@
-#include "include_asm.h"
 #include "bbtypes.h"
 #include "string.h"
 #include "bcp.h"
@@ -7,9 +6,10 @@
 #include "libcrypto/sha1.h"
 #include "macros.h"
 
-void* wordcopy(void* dst, void* src, s32 nWords);
+u32 cur_proc_allowed_skc_bitmask;
 
-extern BbVirage2* virage2_offset;
+BbVirage2* virage2_offset = (BbVirage2*)PHYS_TO_K1(VIRAGE2_BASE_ADDR);
+s8 D_9FC0EBC4 = -1;
 
 void virage2_gen_public_key(u32* pubkeyOut) {
     u32 i;
@@ -25,7 +25,6 @@ void virage2_gen_public_key(u32* pubkeyOut) {
     wordcopy(virage2_offset->publicKey, pubkeyOut, ARRAY_COUNT(virage2_offset->publicKey));
 }
 
-extern u32 cur_proc_allowed_skc_bitmask;
 
 void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
     s32 temp;
@@ -42,11 +41,8 @@ void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
     cur_proc_allowed_skc_bitmask = cmdHead->secureKernelRights;
 }
 
-s32 rsa_check_signature(s32* digest, unsigned long* certpublickey, unsigned long certexponent, RsaSize rsaSize,
-                        unsigned long* certsign);
-
-s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, unsigned long* certpublickey,
-                          unsigned long certexponent, RsaSize rsaSize, unsigned long* certsign) {
+s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey,
+                          const u32 certexponent, RsaSize rsaSize, u32* certsign) {
     u8 digest[0x14];
     SHA1Context sha1ctx;
     s32 i;
@@ -58,12 +54,11 @@ s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, unsigned l
         }
     }
     SHA1Result(&sha1ctx, digest);
-    return rsa_check_signature(&digest, certpublickey, certexponent, rsaSize, certsign);
+    return rsa_check_signature(digest, certpublickey, certexponent, rsaSize, certsign);
 }
 
-#ifdef NON_MATCHING
-s32 rsa_check_signature(u8* digest, unsigned long* certpublickey, unsigned long certexponent, RsaSize rsaSize,
-                        unsigned long* certsign) {
+s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexponent, RsaSize rsaSize,
+                        u32* certsign) {
     char result[512];
     s32 rsaBits;
     u32 rsaBytes;
@@ -79,17 +74,16 @@ s32 rsa_check_signature(u8* digest, unsigned long* certpublickey, unsigned long 
     }
 
     bsl_rsa_verify(result, certsign, certpublickey, &certexponent, rsaBits);
-    if (memcmp(digest, &result[rsaBytes - 0x14], 0x14) == 0) {
+
+    rsaBytes -= 0x14;
+    if (memcmp(digest, &result[rsaBytes], 0x14) == 0) {
         return 0;
     }
 
     return -1;
 }
-#else
-INCLUDE_ASM("asm/non_matchings/9FC031D0", rsa_check_signature);
-#endif
 
-s32 func_9FC03410(void* randomOut, s32 nWords) {
+s32 func_9FC03410(u32* randomOut, s32 nWords) {
     SHA1Context sha1ctx;
     u8 randomBytes[0x200];
     u8 sp270[125][0x14];
@@ -120,7 +114,7 @@ s32 func_9FC03410(void* randomOut, s32 nWords) {
             SHA1Result(&sha1ctx, spC38.bytes);
             memcpy(&sp270[i], spC38.bytes, 0x14);
         }
-    } while (func_9FC047CC(sp270, 0x9C4) == -1);
+    } while (func_9FC047CC((u8*)sp270, 0x9C4) == -1);
     SHA1Reset(&sha1ctx);
     SHA1Input(&sha1ctx, (u8*)sp270, sp270[0][0] + 1);
     SHA1Input(&sha1ctx, (u8*)virage2_offset->appStateKey, 0x10);
@@ -132,21 +126,37 @@ s32 func_9FC03410(void* randomOut, s32 nWords) {
         SHA1Reset(&sha1ctx);
         SHA1Input(&sha1ctx, (u8*)sp270, sp270[0][1] + 1);
         SHA1Result(&sha1ctx, spC38.bytes);
-        wordcopy(randomOut + 0x10, spC38.words, nWords - 4);
+        wordcopy(&randomOut[4], spC38.words, nWords - 4);
     } else {
         wordcopy(randomOut, spC38.words, nWords);
     }
     return 0;
 }
 
-INCLUDE_ASM("asm/non_matchings/9FC031D0", func_9FC035EC);
+s32 func_9FC035EC(u32* randomOut, s32 nWords) {
+    s32 temp_s3 = nWords / 8;
+    s32 temp_s0 = nWords % 8;
+    s32 i;
 
-void func_9FC03694(u8* data, u32 datasize, u32* private_key, u32* signature, u32 identity) {
+    if (temp_s0 > 0 && func_9FC03410(randomOut, temp_s0) != 0) {
+        return -1;
+    }
+    randomOut = &randomOut[temp_s0];
+
+    for (i = 0; i < temp_s3; i++) {
+        if (func_9FC03410(&randomOut[i * 8], 8) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+void func_9FC03694(u8* data, u32 datasize, u32* private_key, BbEccSig* signature, u32 identity) {
     u32 random_data[8];
 
     do {
         func_9FC035EC(random_data, ARRAY_COUNT(random_data));
-    } while (bsl_compute_ecc_sig(data, datasize, private_key, random_data, signature, identity) != BSL_OK);
+    } while (bsl_compute_ecc_sig(data, datasize, private_key, random_data, (u32*)signature, identity) != BSL_OK);
 }
 
 s32 verify_ecc_signature(u8* data, u32 datasize, u32* public_key, u32* signature, u32 identity) {
@@ -168,12 +178,10 @@ s32 func_9FC0374C(void) {
 }
 
 s32 dma_from_cart(s32 bufSelect, void* outBuf, s32 length, s32 direction) {
-    s32 cartAddr;
-
     IO_WRITE(PI_DRAM_ADDR_REG, outBuf);
     IO_WRITE(PI_CART_ADDR_REG, (bufSelect) ? 0x400 : 0);
 
-    if (!direction) {
+    if (direction == OS_READ) {
         IO_WRITE(PI_EX_WR_LEN_REG, length - 1);
     } else {
         IO_WRITE(PI_EX_RD_LEN_REG, length - 1);
@@ -254,9 +262,7 @@ int strcmp(const char* str1, const char* str2) {
         str1++;
         str2++;
     }
-    if (*str1 != *str2) {
-        return *str1 - *str2;
-    }
+    return *str1 - *str2;
 }
 
 int strncmp(const char* str1, const char* str2, int num) { // num is signed?
@@ -373,9 +379,6 @@ s32 read_virage01(s32* virageController, BbVirage01* virageData) {
     return -1;
 }
 
-extern s8 D_9FC0EBC4;
-s32 write_virage_data(void* controller, BbVirage01* data, s32 size);
-
 s32 write_virage01_data(BbVirage01* virageData) {
     u32 virageController;
 
@@ -389,7 +392,7 @@ s32 write_virage01_data(BbVirage01* virageData) {
         virageController = VIRAGE1_BASE_ADDR;  
     }
     
-    if (write_virage_data((void*)(virageController | 0xC000), virageData, 0x10) < 0) {
+    if (write_virage_data(virageController | 0xC000, (void*)virageData, 0x10) < 0) {
         return -1;
     }
     
@@ -402,17 +405,20 @@ s32 set_virage01_selector(BbVirage01* virageData) {
     s32 v1WriteCount;
 
     initialize_virage_controllers();
+
+    // read virage0
     if (func_9FC0425C(VIRAGE0_STATUS_REG) < 0) {
         return -1;
     }
     v0WriteCount = read_virage01((void*)PHYS_TO_K1(VIRAGE0_BASE_ADDR), virageData);
 
-
+    // read virage1
     if (func_9FC0425C(VIRAGE1_STATUS_REG) < 0) {
         return -1;
     }
     v1WriteCount = read_virage01((void*)PHYS_TO_K1(VIRAGE1_BASE_ADDR), virageData);
-    
+
+    // if both failed the checksum, zero data and use v1 for writes
     if ((v0WriteCount < 0) && (v1WriteCount < 0)) {
         memset(virageData, 0, 0x40);
         D_9FC0EBC4 = 0;
@@ -420,11 +426,13 @@ s32 set_virage01_selector(BbVirage01* virageData) {
     }
 
     if (v1WriteCount < v0WriteCount) {
+        // if the v1 write count is less than the v0 write count (or if v1 failed the checksum), use v0 data but use v1 for writes
         if ((func_9FC0425C(VIRAGE0_STATUS_REG) < 0) || (read_virage01((void*)PHYS_TO_K1(VIRAGE0_BASE_ADDR), virageData) < 0)) {
             return -1;
         }
         D_9FC0EBC4 = 0;
     } else {
+        // if the v0 write count is less than the v1 write count (or if v0 failed the checksum), use v1 data but use v0 for writes
         D_9FC0EBC4 = 1;
     }
     return 0;
@@ -432,14 +440,14 @@ s32 set_virage01_selector(BbVirage01* virageData) {
 
 extern BbVirage01 D_9FC0F308;
 
-u16 *getTrialConsumptionByCid(u16 cid) {
-    cid &= 0x7FFF;
+u16 *getTrialConsumptionByCid(BbTicketId tid) {
+    tid &= 0x7FFF;
 
-    if ((cid < D_9FC0F308.tidWindow) || (cid >= (s32)(D_9FC0F308.tidWindow + ARRAY_COUNT(D_9FC0F308.cc)))) {
+    if ((tid < D_9FC0F308.tidWindow) || (tid >= (s32)(D_9FC0F308.tidWindow + ARRAY_COUNT(D_9FC0F308.cc)))) {
         return NULL;
     }
 
-    return &D_9FC0F308.cc[cid - D_9FC0F308.tidWindow];
+    return &D_9FC0F308.cc[tid - D_9FC0F308.tidWindow];
 }
 
 s32 check_untrusted_ptr_range(void* pointer, u32 size, u32 alignment) {
@@ -456,8 +464,6 @@ s32 check_unknown_range(void* pointer, u32 size, u32 alignment) {
            ((ptr & (alignment - 1)) == 0);         // pointer is aligned
 }
 
-extern const char aRoot_1[];
-
 s32 check_cert_ranges(BbCertBase** arg0) {
     if (!CHECK_UNTRUSTED(arg0)) {
         return FALSE;
@@ -470,7 +476,7 @@ s32 check_cert_ranges(BbCertBase** arg0) {
     if (arg0[0]->certType == 1) {
         // RSA(root) or RSA -> RSA
         if (CHECK_UNTRUSTED((BbRsaCert*)arg0[0]) &&
-            (strcmp(arg0[0]->issuer, aRoot_1) == 0 || CHECK_UNTRUSTED((BbRsaCert*)arg0[1]))) {
+            (strcmp((const char*)arg0[0]->issuer, "Root") == 0 || CHECK_UNTRUSTED((BbRsaCert*)arg0[1]))) {
             return TRUE;
         }
     } else {
@@ -481,14 +487,4 @@ s32 check_cert_ranges(BbCertBase** arg0) {
     }
 
     return FALSE;
-}
-
-extern const char aEntering_excep[];
-
-typedef void (*ExceptionCallback)(const char*);
-
-void func_9FC03ED0(ExceptionCallback cb) {
-    cb((char*)PHYS_TO_K1((s32)aEntering_excep));
-    IO_WRITE(PI_MISC_REG, 0x30);
-    while(1);
 }

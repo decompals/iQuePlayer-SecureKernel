@@ -5,31 +5,6 @@
 #include "libcrypto/sha1.h"
 #include "macros.h"
 
-s32 write_virage2(void);
-s32 write_virage_data(u32, BbVirage2*, u32);
-u16* getTrialConsumptionByCid(u16 cid);
-void write_virage01_data(BbVirage01*);
-void set_virage01_selector(BbVirage01*);
-void set_proc_permissions(BbContentMetaDataHead* cmdHead);
-void aes_cbc_set_key_iv(BbAesKey* key, BbAesIv* iv);
-s32 dma_from_cart(s32 bufSelect, void* outBuf, s32 length, s32 direction);
-void startup(void);
-s32 card_read_block(u32 block, s32 bufSelect);
-s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, unsigned long* certpublickey,
-                         unsigned long certexponent, RsaSize rsaSize, unsigned long* certsign);
-s32 verify_cert_chain(BbRsaCert**, s32);
-s32 check_certs_against_revocation_list(BbContentMetaDataHead*, BbRsaCert**, BbAppLaunchCrls*);
-void func_9FC0384C(s32 arg0, s32 continuation);
-void osInvalDCache(void* buf, s32 len);
-
-extern u16 D_9FC0EBB0;
-extern BbVirage01 D_9FC0F308;
-extern BbVirage2* virage2_offset;
-extern s32 g_trial_time_elapsed;
-extern s16 D_9FC0EBB2;
-extern u16 g_cur_proc_trial_type;
-extern s32 D_9FC0F304;
-
 #define SKRAM_START 0x9FC40000
 
 u32 func_9FC01B60(u32 regVal) {
@@ -174,10 +149,10 @@ s32 verify_system_app(s32* blockPtr) {
     RELOCATE_PTR(appLaunchCrls->cprl.certChain[0]);
     RELOCATE_PTR(appLaunchCrls->cprl.certChain[1]);
 
-    if (check_certs_against_revocation_list(cmd, certChain, appLaunchCrls) < 0) {
+    if (check_certs_against_revocation_list(cmd, (BbCertBase**)certChain, appLaunchCrls) < 0) {
         return -1;
     }
-    if (verify_cert_chain(certChain, 2) < 0) {
+    if (verify_cert_chain((BbCertBase**)certChain, 2) < 0) {
         return -1;
     }
 
@@ -224,7 +199,7 @@ s32 func_9FC01FBC(s32 block, s32 bufSelect, s32 continuation, void** outBufPtr, 
     }
     osInvalDCache((void*)PHYS_TO_K0(*outBufPtr), 0x200);
 
-    ret = dma_from_cart(bufSelect, *outBufPtr, length, 0/*Read*/);
+    ret = dma_from_cart(bufSelect, *outBufPtr, length, OS_READ);
     if (ret < 0) {
         return ret;
     }
@@ -237,7 +212,7 @@ s32 load_system_app(u32* systemAppEntrypointOut) {
     SHA1Context sha1ctx;
     BbShaHash systemAppHash;
     s32 blockStart = 0;
-    void* bufPtr;
+    u8* bufPtr;
     s32 aesContinuation;
     s32 ret;
     u32 endBlock;
@@ -261,7 +236,7 @@ s32 load_system_app(u32* systemAppEntrypointOut) {
     length = 0x200;
     for (i = 0; i < 8; i++) {
         block = (blockStart << 5) + i;
-        ret = func_9FC01FBC(block, 0, aesContinuation, &bufPtr, length, &sha1ctx, i == 0);
+        ret = func_9FC01FBC(block, 0, aesContinuation, (void**)&bufPtr, length, &sha1ctx, i == 0);
         if (ret < 0) {
             return ret;
         }
@@ -282,7 +257,7 @@ s32 load_system_app(u32* systemAppEntrypointOut) {
             remaining = 0;
         }
 
-        ret = func_9FC01FBC(block, 0, 1, &bufPtr, length, &sha1ctx, 0);
+        ret = func_9FC01FBC(block, 0, 1, (void**)&bufPtr, length, &sha1ctx, 0);
         if (ret < 0) {
             return ret;
         }
@@ -302,10 +277,12 @@ s32 load_system_app(u32* systemAppEntrypointOut) {
     return ret;
 }
 
+extern BbVirage01 D_9FC0F308;
+
 #define THROW_EXCEPTION() \
     ((void (*)())PHYS_TO_K1(R_VEC + 0x200 + E_VEC))()
 
-u32 func_9FC022A8(void) {
+u32 setup_system(void) {
     u32 systemAppEntrypoint;
 
     IO_WRITE(PI_MISC_REG, 0x31);
@@ -430,12 +407,15 @@ s32 write_virage2(void) {
     virage2_offset->csumAdjust = 0xBBC0DE - checksum;
 
     // Write data
-    ret = write_virage_data(0x1FCAC000, virage2_offset, 0x40);
+    ret = write_virage_data(0x1FCAC000, (void*)virage2_offset, 0x40);
     if (ret >= 0) {
         ret = 0;
     }
     return ret;
 }
+
+extern u32 D_9FC0F304;
+extern u32 g_trial_time_elapsed;
 
 s32 check_trial_timer(void) {
     u32 temp_s0;

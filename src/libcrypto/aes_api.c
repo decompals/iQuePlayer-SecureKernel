@@ -25,7 +25,7 @@ int aesMakeKey(AesKeyInstance* key, u8 direction, int keyLen, u8* keyMaterial) {
 }
 
 int aesCipherInit(AesCipherInstance* cipher, u8 mode, u8* IV) {
-    if (mode - 1 >= 2U) {
+    if (mode != 1 && mode != 2) {
         return -4;
     }
     cipher->mode = mode;

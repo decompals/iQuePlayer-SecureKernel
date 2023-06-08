@@ -6,30 +6,25 @@
 #include "libcrypto/sha1.h"
 #include "macros.h"
 
-extern BbContentMetaDataHead contentMetaDataHead;
-extern BbTicketHead ticketHead;
-extern BbVirage2* virage2_offset;
-extern u16 D_9FC0EBB0;
-extern u16 D_9FC0EBB2;
-extern u32 D_9FC0EBB8;
-extern u32 D_9FC0ED30;
-extern u32 D_9FC0F0DC;
-extern AesKeyInstance D_9FC0F0E0;
-extern AesCipherInstance D_9FC0F2C8;
-extern u32 D_9FC0F2DC;
-extern u32 D_9FC0F2E0;
-extern BbAesIv D_9FC0F2E4;
-extern s32 D_9FC0F304;
-extern BbVirage01 D_9FC0F308;
-extern u16 g_cur_proc_trial_type;
-extern u32 g_trial_time_elapsed;
-extern SHA1Context sha1_ctx;
+BbContentMetaDataHead contentMetaDataHead;
+BbTicketHead ticketHead;
 
-void startup(void);
-void launch_app_trampoline(void);
-void write_virage01_data(BbVirage01*);
-s32 check_cert_ranges(BbCertBase**);
-u16* getTrialConsumptionByCid(u16);
+u32 D_9FC0ED30;
+u32 D_9FC0F0DC;
+AesKeyInstance D_9FC0F0E0;
+AesCipherInstance D_9FC0F2C8;
+u32 D_9FC0F2DC;
+u32 D_9FC0F2E0;
+BbAesIv D_9FC0F2E4;
+u32 D_9FC0F304;
+BbVirage01 D_9FC0F308;
+u32 g_trial_time_elapsed;
+SHA1Context sha1_ctx;
+
+u16 D_9FC0EBB0 = 0xFFFF;
+s16 D_9FC0EBB2 = 0;
+u16 g_cur_proc_trial_type = 0xFFFF;
+u32 D_9FC0EBB8 = 0;
 
 s32 check_ticket_bundle_ranges(BbTicketBundle* bundle) {
     if (
@@ -155,7 +150,6 @@ s32 func_9FC00DCC(BbTicketBundle* bundle, BbAppLaunchCrls* crls, RecryptList* re
 
 s32 skLaunchSetup(BbTicketBundle* bundle, BbAppLaunchCrls* crls, RecryptList* recryptList) {
     BbAesKey sp10;
-    BbAesKey* key;
     BbTicketHead* head;
     s32 ret;
 
@@ -188,18 +182,18 @@ s32 skLaunchSetup(BbTicketBundle* bundle, BbAppLaunchCrls* crls, RecryptList* re
     return 0;
 }
 
-s32 skLaunch(void* a0) {
+s32 skLaunch(void* app_entrypoint) {
     BbShaHash digest;
     u8* ptr;
     u16* cc;
     s32 a1;
 
-    if (!check_untrusted_ptr_range(a0, 0, 4)) {
+    if (!check_untrusted_ptr_range(app_entrypoint, 0, 4)) {
         return -1;
     }
 
     if (!(contentMetaDataHead.execFlags & 2)) {
-        ptr = (u8*) a0 - 0x1000;
+        ptr = (u8*) app_entrypoint - 0x1000;
 
         if (!check_untrusted_ptr_range(ptr, contentMetaDataHead.size, 4)) {
             return -1;
@@ -231,7 +225,7 @@ s32 skLaunch(void* a0) {
         g_cur_proc_trial_type = ticketHead.code;
 
         if (ticketHead.code == 2 || ticketHead.code == 0) {
-            a1 = (D_9FC0F304 - *cc + 3) / 4;
+            a1 = ((s32)D_9FC0F304 - *cc + 3) / 4;
 
             g_trial_time_elapsed = *cc * 15 >> 2;
             D_9FC0EBB2 = *cc;
@@ -264,11 +258,12 @@ s32 skLaunch(void* a0) {
         IO_WRITE(MI_18_REG, 0x7530C800);
     }
 
+    // launch the app, this does not return
     __asm__(
         "move $v0, %0;"
         "la   $t0, %1;"
         "jr   $t0;"
-        : : "r" (a0), "i" (launch_app_trampoline) : "v0", "t0"
+        : : "r" (app_entrypoint), "i" (launch_app_trampoline) : "v0", "t0"
     );
 
     return -1;
@@ -322,7 +317,7 @@ s32 func_9FC0134C(u8* buf, u32 size, s32 isRecrypt) {
     u32 i;
 
     for (i = 0; i < size; i += chunkSize) {
-        if (dma_from_cart(0, K0_TO_PHYS(buf), chunkSize, TRUE) < 0) {
+        if (dma_from_cart(0, (void*)K0_TO_PHYS((uintptr_t)buf), chunkSize, OS_WRITE) < 0) {
             return -1;
         }
 
@@ -369,7 +364,7 @@ s32 skRecryptData(u8* buf, u32 size) {
         }
 
         aesCipherInit(&D_9FC0F2C8, 2, (u8*)iv1);
-        aes_cbc_set_key_iv(contentMetaDataHead.key, iv2);
+        aes_cbc_set_key_iv(&contentMetaDataHead.key, iv2);
 
         D_9FC0F2E0 = FALSE;
         D_9FC0F2DC = FALSE;
@@ -424,12 +419,12 @@ s32 skSignHash(BbShaHash* hash, BbEccSig* outSignature) {
         return -1;
     }
 
-    func_9FC03694(hash, sizeof(*hash), virage2_offset->privateKey, outSignature, 1);
+    func_9FC03694((u8*)hash, sizeof(*hash), virage2_offset->privateKey, outSignature, 1);
 
     return 0;
 }
 
-s32 skVerifyHash(BbShaHash* hash, BbEccSig* signature, BbCertBase** certChain, BbAppLaunchCrls* crls) {
+s32 skVerifyHash(BbShaHash* hash, u32* signature, BbCertBase** certChain, BbAppLaunchCrls* crls) {
     BbEccPublicKey key;
     u32 ret;
     u32 i;
@@ -460,7 +455,7 @@ s32 skVerifyHash(BbShaHash* hash, BbEccSig* signature, BbCertBase** certChain, B
 
         if (crls->carl.head != NULL) {
             for (i = 0; i < crls->carl.head->numberRevoked; i++) {
-                if (strstr(&certChain[CRL_CA]->name, crls->carl.list[i]) != NULL) {
+                if (strstr((const char*)&certChain[CRL_CA]->name, (const char*)crls->carl.list[i]) != NULL) {
                     return -9;
                 }
             }
@@ -470,7 +465,7 @@ s32 skVerifyHash(BbShaHash* hash, BbEccSig* signature, BbCertBase** certChain, B
             if (crls->cprl.head != NULL) {
                 for (i = 0; i < crls->cprl.head->numberRevoked; i++) {
                     //! CRL_TS instead of CRL_CP?
-                    if (strstr(&certChain[CRL_TS]->name, crls->cprl.list[i]) != NULL) {
+                    if (strstr((const char*)&certChain[CRL_TS]->name, (const char*)crls->cprl.list[i]) != NULL) {
                         return -9;
                     }
                 }
@@ -478,25 +473,26 @@ s32 skVerifyHash(BbShaHash* hash, BbEccSig* signature, BbCertBase** certChain, B
 
             if (crls->tsrl.head != NULL) {
                 for (i = 0; i < crls->tsrl.head->numberRevoked; i++) {
-                    if (strstr(&certChain[CRL_TS]->name, crls->tsrl.list[i]) != NULL) {
+                    if (strstr((const char*)&certChain[CRL_TS]->name, (const char*)crls->tsrl.list[i]) != NULL) {
                         return -9;
                     }
                 }
             }
 
             return rsa_check_signature(
-                hash,
-                &((BbRsaCert*) certChain[CRL_TS])->publicKey,
+                (u8*)hash,
+                ((BbRsaCert*) certChain[CRL_TS])->publicKey,
                 ((BbRsaCert*) certChain[CRL_TS])->exponent,
                 0,
                 signature);
         }
 
-        ret = verify_ecc_signature(hash, sizeof(*hash), &((BbEccCert*) certChain[CRL_TS])->publicKey, signature, 1);
+        ret = verify_ecc_signature((u8*)hash, sizeof(*hash), ((BbEccCert*)certChain[CRL_TS])->publicKey,
+                                   signature, 1);
     } else {
-        virage2_gen_public_key(&key);
+        virage2_gen_public_key(key);
 
-        ret = verify_ecc_signature(hash, sizeof(*hash), &key, signature, 1);
+        ret = verify_ecc_signature((u8*)hash, sizeof(*hash), key, signature, 1);
     }
 
     if (ret == 0) {
@@ -531,7 +527,7 @@ s32 skSetLimit(u16 limit, u16 code) {
         return -1;
     }
 
-    if ((s16) ticketHead.tid < 0) {
+    if ((s16)ticketHead.tid < 0) {
         if (ticketHead.code >= 3) {
             ticketHead.code = code;
             ticketHead.limit = limit;

@@ -37,6 +37,16 @@ typedef unsigned long   size_t;
 #endif
 #endif
 
+#if !defined(_UINTPTR_T) && !defined(_UINTPTR_T_) && !defined(_UINTPTR_T_DEF)
+#define _UINTPTR_T
+#if (_MIPS_SZPTR == 32)
+typedef unsigned int uintptr_t;
+#endif
+#if (_MIPS_SZPTR == 64)
+typedef unsigned long long uintptr_t;
+#endif
+#endif
+
 #endif
 
 #ifndef TRUE

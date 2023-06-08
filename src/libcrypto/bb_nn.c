@@ -131,7 +131,7 @@ void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c) {
     }
     t[1] = (t[1] - (u >> 0x10)) - v;
 
-    while (cHigh < t[1] || (t[1] == cHigh && !(t[0] < (cLow << 0x10)))) {
+    while (cHigh < t[1] || (t[1] == cHigh && !(t[0] < (unsigned)(cLow << 0x10)))) {
         temp = cLow << 0x10;
         t[0] -= temp;
         if (~temp < t[0]) {
@@ -175,10 +175,10 @@ void bigint_encode(u8* a, int len, bigint_digit* b, int digits) {
     bigint_digit t;
     int j;
     unsigned int i;
-    unsigned int u;
+    /* unsigned int u; */
 
     len--;
-    for (i = 0; i < digits; i++) {
+    for (i = 0; i < (unsigned)digits; i++) {
         if (len < 0) {
             return;
         }
@@ -272,7 +272,7 @@ bigint_digit bigint_sub(bigint_digit* a, bigint_digit* b, bigint_digit* c, int d
 }
 
 int bigint_digits(bigint_digit* a, int digits) {
-    int i;
+    /* int i; */
 
     while (--digits >= 0) {
         if (a[digits] != 0) {
@@ -407,7 +407,7 @@ void bigint_div(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, 
     bigint_zero(a, cDigits);
 
     for (i = cDigits - ddDigits; i >= 0; i--) {
-        if (t == -1) {
+        if (t == (bigint_digit)(-1)) {
             ai = cc[i + ddDigits];
         } else {
             bigint_digit_div(&ai, &cc[i + ddDigits - 1], t + 1);
@@ -489,7 +489,7 @@ void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigi
     for (i = ciBits; i >= 0 ; i--) {
         ci = c[i];
         setbits = 32;
-        if (i == ciBits) {
+        if ((unsigned)i == ciBits) {
             while ((ci >> 30) == 0) {
                 ci <<= 2;
                 setbits -= 2;
@@ -527,8 +527,8 @@ int bigint_bits(bigint_digit* a, int digits) {
     return (digits - 1) * 32 + bigint_digit_bits(a[digits - 1]);
 }
 
-void bsl_rsa_verify(char* result, unsigned long* certsign, unsigned long* certpublickey,
-                    unsigned long* certexponent, int num_bits) {
+void bsl_rsa_verify(char* result, unsigned long* certsign, const unsigned long* certpublickey,
+                    const unsigned long* certexponent, int num_bits) {
     unsigned long nDigits;
     bigint_digit bign[129];
     bigint_digit bigm[129];
@@ -554,7 +554,7 @@ void bsl_rsa_verify(char* result, unsigned long* certsign, unsigned long* certpu
     bige[0] = *certexponent;
     nDigits = bigint_digits(bign, ARRAY_COUNT(bign));
     bigint_mod_exp(bigc, bigm, bige, 1, bign, nDigits);
-    bigint_encode(result, (num_bits + 7) / 8, bigc, nDigits);
+    bigint_encode((u8*)result, (num_bits + 7) / 8, bigc, nDigits);
 }
 
 void field_to_bigint(field_2n* a, bigint_digit* b, int digits) {

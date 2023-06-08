@@ -43,7 +43,7 @@ void bigint_mod_mult(bigint_digit* a, bigint_digit* b, bigint_digit* c, bigint_d
 void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, bigint_digit* d, int dDigits);
 int bigint_iszero(bigint_digit* a, int digits);
 int bigint_bits(bigint_digit* a, int digits);
-void bsl_rsa_verify(char* result, unsigned long* certsign, unsigned long* certpublickey, unsigned long* certexponent,
+void bsl_rsa_verify(char* result, unsigned long* certsign, const unsigned long* certpublickey, const unsigned long* certexponent,
                     int num_bits);
 void field_to_bigint(field_2n* a, bigint_digit* b, int digits);
 void bigint_to_field(bigint_digit* a, field_2n* b, int digits);

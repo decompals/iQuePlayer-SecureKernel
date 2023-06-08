@@ -179,7 +179,7 @@ typedef enum {
 } RsaSize;
 
 typedef struct {
-    /* 0x00 */ u32 contentId;
+    /* 0x00 */ BbContentId contentId;
     /* 0x04 */ BbAesKey contentKey;
     /* 0x14 */ u32 unk14;
     /* 0x18 */ char unk18[8];
@@ -187,8 +187,8 @@ typedef struct {
 
 typedef struct {
     /* 0x00 */ BbEccSig signature;
-    /* 0x40 */ s32 numEntries;
-    /* 0x44 */ RecryptListEntry entries[0];
+    /* 0x40 */ u32 numEntries;
+    /* 0x44 */ RecryptListEntry entries[1/*numEntries*/];
 } RecryptList;
 
 #define RECRYPT_LIST_MAX_SIZE 0x4000
@@ -210,5 +210,57 @@ s32 check_unknown_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_SKRAM_ARRAY_RANGE(ptr, count) \
     check_unknown_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
+
+#define OS_READ  0
+#define OS_WRITE 1
+
+// TODO sort these
+void startup(void);
+void launch_app_trampoline(void);
+s32 write_virage01_data(BbVirage01* virageData);
+u16* getTrialConsumptionByCid(u16 cid);
+s32 verify_cert_chain(BbCertBase** certChain, s32 serverType);
+s32 check_cert_ranges(BbCertBase**);
+s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrls* crls);
+s32 recrypt_list_get_key_for_cid(RecryptList* list, BbAesKey* key, BbContentId contentId);
+void aes_cbc_set_key_iv(BbAesKey* key, BbAesIv* iv);
+void set_proc_permissions(BbContentMetaDataHead* cmdHead);
+s32 recrypt_list_verify_size_and_sig(RecryptList* list);
+s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, u32 arg2);
+s32 dma_from_cart(s32 bufSelect, void* outBuf, s32 length, s32 direction);
+void func_9FC0384C(s32 arg0, s32 continuation);
+void func_9FC03694(u8* data, u32 datasize, u32* private_key, BbEccSig* signature, u32 identity);
+s32 check_crlbundle_ranges(BbAppLaunchCrls* launchCrls);
+s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion,
+                          BbCrlBundle* cprl, s32 requiredCprlVersion,
+                          BbCrlBundle* tsrl, s32 requiredTsrlVersion);
+s32 verify_ecc_signature(u8* data, u32 datasize, u32* public_key, u32* signature, u32 identity);
+void virage2_gen_public_key(u32* pubkeyOut);
+s32 write_virage2(void);
+s32 write_virage_data(u32 controller, u32 *data, s32 size);
+s32 set_virage01_selector(BbVirage01* virageData);
+s32 card_read_block(u32 block, s32 bufSelect);
+s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBase** chain,
+                                        BbAppLaunchCrls* appLaunchCrls);
+void osInvalDCache(void* buf, s32 len);
+s32 func_9FC04220(void);
+s32 func_9FC0425C(u32 ctrlReg);
+s32 func_9FC04304(u32 ctrlReg);
+void* wordcopy(void* dst, void* src, s32 nWords);
+s32 func_9FC047CC(u8* a0, s32 a1);
+void initialize_virage_controllers(void);
+s32 func_9FC035EC(u32* randomOut, s32 nWords);
+s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey, const u32 certexponent,
+                         RsaSize rsaSize, u32* certsign);
+s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexponent, RsaSize rsaSize, u32* certsign);
+
+// TODO rename these
+extern const u32 pubkey[];
+extern const u32 exponent;
+
+extern BbVirage2* virage2_offset;
+extern u16 D_9FC0EBB0;
+extern s16 D_9FC0EBB2;
+extern u16 g_cur_proc_trial_type;
 
 #endif
