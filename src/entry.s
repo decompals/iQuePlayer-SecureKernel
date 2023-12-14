@@ -32,14 +32,23 @@ ENDDATA(skc_table_size)
 .set mips3
 
 LEAF(entrypoint)
-    // either coming from the bootrom or from soft reset, this can be entered either in the cached
-    // or uncached address space
+    // either coming from the bootrom, soft reset, or various interrupt causes, this can be entered either
+    // in the cached or uncached address space
 .set noreorder
 .set noat
+    // since execution could've come here from a timer interrupt firing halfway through interrupt handling,
+    // take care to save the (lower 32 bits of the) userspace kernel registers until the check for timer
+    // interrupt completes
+
+    // [0xXXXXXXXX,         k0]    [0xXXXXXXXX,         k1]
     dsll32  k0, k0, 0
+    // [        k0, 0x00000000]    [0xXXXXXXXX,         k1]
     dsrl32  k0, k0, 0
+    // [0x00000000,         k0]    [0xXXXXXXXX,         k1]
     dsll32  k1, k1, 0
+    // [0x00000000,         k0]    [        k1, 0x00000000]
     daddu   k1, k1, k0
+    // [0x00000000,         k0]    [        k1,         k0]
 
     // check for timer expiry
     lw      k0, PHYS_TO_K1(MI_SK_EXCEPTION_REG)
@@ -388,7 +397,7 @@ LEAF(__handle_timer_expiry_2)
 
     la      k1, PHYS_TO_K1(MI_SK_EXCEPTION_REG)
     lw      k0, (k1)
-    and     k0, k0, ~(1 << 3) // ?
+    and     k0, k0, ~(1 << 3) // clear timer expiry?
     and     k0, k0, ~(1 << 0) // exit secure mode
 
     // unset SR, BEV

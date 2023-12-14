@@ -228,7 +228,7 @@ void set_proc_permissions(BbContentMetaDataHead* cmdHead);
 s32 recrypt_list_verify_size_and_sig(RecryptList* list);
 s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, u32 arg2);
 s32 dma_from_cart(s32 bufSelect, void* outBuf, s32 length, s32 direction);
-void func_9FC0384C(s32 arg0, s32 continuation);
+void AES_Run(s32 arg0, s32 continuation);
 void func_9FC03694(u8* data, u32 datasize, u32* private_key, BbEccSig* signature, u32 identity);
 s32 check_crlbundle_ranges(BbAppLaunchCrls* launchCrls);
 s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion,
@@ -239,7 +239,7 @@ void virage2_gen_public_key(u32* pubkeyOut);
 s32 write_virage2(void);
 s32 write_virage_data(u32 controller, u32 *data, s32 size);
 s32 set_virage01_selector(BbVirage01* virageData);
-s32 card_read_block(u32 block, s32 bufSelect);
+s32 card_read_page(u32 block, s32 bufSelect);
 s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBase** chain,
                                         BbAppLaunchCrls* appLaunchCrls);
 void osInvalDCache(void* buf, s32 len);

@@ -198,7 +198,7 @@ void aes_cbc_set_key_iv(BbAesKey* key, BbAesIv* iv) {
     wordcopy((void*)PHYS_TO_K1(PI_AES_IV_BUF(0)), iv, ARRAY_COUNT(*iv));
 }
 
-void func_9FC0384C(s32 bufSelect, s32 continuation) {
+void AES_Run(s32 bufSelect, s32 continuation) {
     u32 ctrl = PI_AES_EXEC_CMD;
 
     ctrl |= bufSelect << 14;
@@ -212,7 +212,7 @@ void func_9FC0384C(s32 bufSelect, s32 continuation) {
     IO_WRITE(PI_AES_CTRL_REG, ctrl);
 }
 
-s32 card_read_block(u32 block, s32 bufSelect) {
+s32 card_read_page(u32 block, s32 bufSelect) {
     IO_WRITE(PI_CARD_BLK_OFFSET_REG, block * 512);
 
     if (bufSelect != 0) {

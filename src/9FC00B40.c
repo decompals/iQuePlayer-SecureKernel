@@ -321,7 +321,7 @@ s32 func_9FC0134C(u8* buf, u32 size, s32 isRecrypt) {
             return -1;
         }
 
-        func_9FC0384C(0, D_9FC0F2E0);
+        AES_Run(0, D_9FC0F2E0);
         D_9FC0F2E0 = TRUE;
 
         while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY);

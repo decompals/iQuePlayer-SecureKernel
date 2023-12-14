@@ -23,7 +23,7 @@ s32 func_9FC01B88(s32 blockNum) {
     s32 i;
 
     while (TRUE) {
-        ret = card_read_block(blockNum << 5, 0);
+        ret = card_read_page(blockNum << 5, 0);
         if (ret == -3) {
             return -3;
         }
@@ -112,7 +112,7 @@ s32 verify_system_app(s32* blockPtr) {
     }
 
     for (i = 0; i < 32; i++) {
-        ret = card_read_block((blockNum << 5) + i, 0);
+        ret = card_read_page((blockNum << 5) + i, 0);
         if (ret < 0) {
             return ret;
         }
@@ -178,12 +178,12 @@ s32 func_9FC01FBC(s32 block, s32 bufSelect, s32 continuation, void** outBufPtr, 
     s32 ret;
     void** var_s0;
 
-    ret = card_read_block(block, bufSelect);
+    ret = card_read_page(block, bufSelect);
     if (ret < 0) {
         return ret;
     }
 
-    func_9FC0384C(bufSelect, continuation);
+    AES_Run(bufSelect, continuation);
 
     while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY) {
         ;
@@ -287,7 +287,7 @@ u32 setup_system(void) {
 
     IO_WRITE(PI_MISC_REG, 0x31);
     IO_WRITE(MI_3C_REG, 0x01000000);
-    IO_WRITE(MI_SK_EXCEPTION_REG, IO_READ(MI_SK_EXCEPTION_REG) & 0xFDFFFFFF);
+    IO_WRITE(MI_SK_EXCEPTION_REG, IO_READ(MI_SK_EXCEPTION_REG) & ~0x02000000);
     IO_WRITE(MI_18_REG, 0);
     IO_WRITE(PI_STATUS_REG, PI_CLR_INTR | PI_SET_RESET); // reset PI
     IO_WRITE(PI_CARD_CNT_REG, 0);
@@ -331,14 +331,14 @@ s32 func_9FC02488(BbShaHash* skHashOut) {
     SHA1Context sha1ctx;
     s32 i;
     s32 blockNum;
-    s32 remainingBlocks;
+    s32 remainingPages;
     s32 var_s3 = 0;
     s32 ret;
 
     SHA1Reset(&sha1ctx);
     blockNum = 0;
-    remainingBlocks = 0x80;
-    while (remainingBlocks > 0) {
+    remainingPages = 4 * 0x20;
+    while (remainingPages > 0) {
         blockNum = func_9FC01B88(blockNum);
         if (blockNum < 0) {
             return blockNum;
@@ -348,16 +348,16 @@ s32 func_9FC02488(BbShaHash* skHashOut) {
         for (i = 0; i < 32; i++) {
             if (i == 0) {
                 if (var_s3 == 1) {
-                    func_9FC0384C(0, FALSE);
+                    AES_Run(0, FALSE);
                 } else {
-                    func_9FC0384C(0, TRUE);
+                    AES_Run(0, TRUE);
                 }
             } else {
-                ret = card_read_block((blockNum << 5) + i, 0);
+                ret = card_read_page((blockNum << 5) + i, 0);
                 if (ret < 0) {
                     return ret;
                 }
-                func_9FC0384C(0, TRUE);
+                AES_Run(0, TRUE);
             }
 
             while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY) {
@@ -365,8 +365,8 @@ s32 func_9FC02488(BbShaHash* skHashOut) {
             }
 
             SHA1Input(&sha1ctx, (void*)PHYS_TO_K1(PI_10000_BUF(0)), 0x200);
-            remainingBlocks--;
-            if (remainingBlocks == 0) {
+            remainingPages--;
+            if (remainingPages == 0) {
                 break;
             }
         }

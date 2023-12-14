@@ -365,14 +365,49 @@ int rijndaelKeySetupEnc(u32* rk, u8* cipherKey, int keyBits);
 #endif
 INCLUDE_ASM("asm/non_matchings/libcrypto/aes_imp", rijndaelKeySetupEnc);
 
-int rijndaelKeySetupDec(u32* rk, u8* cipherKey, int keyBits);
-#if 0
+int rijndaelKeySetupDec(u32* rk, u8* cipherKey, int keyBits) {
     int Nr;
     int i;
     int j;
     u32 temp;
-#endif
-INCLUDE_ASM("asm/non_matchings/libcrypto/aes_imp", rijndaelKeySetupDec);
+
+    Nr = rijndaelKeySetupEnc(rk, cipherKey, keyBits);
+
+    for (i = 0, j = Nr * 4; i < j; i += 4, j -= 4) {
+        temp = rk[i + 0];
+        rk[i + 0] = rk[j + 0];
+        rk[j + 0] = temp;
+
+        temp = rk[i + 1];
+        rk[i + 1] = rk[j + 1];
+        rk[j + 1] = temp;
+
+        temp = rk[i + 2];
+        rk[i + 2] = rk[j + 2];
+        rk[j + 2] = temp;
+
+        temp = rk[i + 3];
+        rk[i + 3] = rk[j + 3];
+        rk[j + 3] = temp;
+    }
+
+    for (i = 1; i < Nr; i++) {
+        rk += 4;
+
+        rk[0] = Td0[Te4[(rk[0] >> 0x18) & 0xFF] & 0xFF] ^ Td1[Te4[(rk[0] >> 0x10) & 0xFF] & 0xFF] ^
+                Td2[Te4[(rk[0] >> 0x08) & 0xFF] & 0xFF] ^ Td3[Te4[(rk[0] >> 0x00) & 0xFF] & 0xFF];
+
+        rk[1] = Td0[Te4[(rk[1] >> 0x18) & 0xFF] & 0xFF] ^ Td1[Te4[(rk[1] >> 0x10) & 0xFF] & 0xFF] ^
+                Td2[Te4[(rk[1] >> 0x08) & 0xFF] & 0xFF] ^ Td3[Te4[(rk[1] >> 0x00) & 0xFF] & 0xFF];
+
+        rk[2] = Td0[Te4[(rk[2] >> 0x18) & 0xFF] & 0xFF] ^ Td1[Te4[(rk[2] >> 0x10) & 0xFF] & 0xFF] ^
+                Td2[Te4[(rk[2] >> 0x08) & 0xFF] & 0xFF] ^ Td3[Te4[(rk[2] >> 0x00) & 0xFF] & 0xFF];
+
+        rk[3] = Td0[Te4[(rk[3] >> 0x18) & 0xFF] & 0xFF] ^ Td1[Te4[(rk[3] >> 0x10) & 0xFF] & 0xFF] ^
+                Td2[Te4[(rk[3] >> 0x08) & 0xFF] & 0xFF] ^ Td3[Te4[(rk[3] >> 0x00) & 0xFF] & 0xFF];
+    }
+    return Nr;
+}
 
 void rijndaelEncrypt(u32* rk, int Nr, u8* pt, u8* ct);
 #if 0
@@ -389,8 +424,7 @@ void rijndaelEncrypt(u32* rk, int Nr, u8* pt, u8* ct);
 #endif
 INCLUDE_ASM("asm/non_matchings/libcrypto/aes_imp", rijndaelEncrypt);
 
-void rijndaelDecrypt(u32* rk, int Nr, u8* ct, u8* pt);
-#if 0
+void rijndaelDecrypt(u32* rk, int Nr, u8* ct, u8* pt) {
     u32 s0;
     u32 s1;
     u32 s2;
@@ -399,6 +433,61 @@ void rijndaelDecrypt(u32* rk, int Nr, u8* ct, u8* pt);
     u32 t1;
     u32 t2;
     u32 t3;
-    int r;
-#endif
-INCLUDE_ASM("asm/non_matchings/libcrypto/aes_imp", rijndaelDecrypt);
+    int r = Nr >> 1;
+
+    t0 = (ct[0x0] << 0x18) ^ (ct[0x1] << 0x10) ^ (ct[0x2] << 0x08) ^ (ct[0x3] << 0x00) ^ rk[0];
+    t1 = (ct[0x4] << 0x18) ^ (ct[0x5] << 0x10) ^ (ct[0x6] << 0x08) ^ (ct[0x7] << 0x00) ^ rk[1];
+    t2 = (ct[0x8] << 0x18) ^ (ct[0x9] << 0x10) ^ (ct[0xA] << 0x08) ^ (ct[0xB] << 0x00) ^ rk[2];
+    t3 = (ct[0xC] << 0x18) ^ (ct[0xD] << 0x10) ^ (ct[0xE] << 0x08) ^ (ct[0xF] << 0x00) ^ rk[3];
+
+    for (;;) {
+        s0 = Td0[t0 >> 0x18 & 0xFF] ^ Td1[t3 >> 0x10 & 0xFF] ^ Td2[t2 >> 0x08 & 0xFF] ^ Td3[t1 >> 0x00 & 0xFF] ^ rk[4];
+        s1 = Td0[t1 >> 0x18 & 0xFF] ^ Td1[t0 >> 0x10 & 0xFF] ^ Td2[t3 >> 0x08 & 0xFF] ^ Td3[t2 >> 0x00 & 0xFF] ^ rk[5];
+        s2 = Td0[t2 >> 0x18 & 0xFF] ^ Td1[t1 >> 0x10 & 0xFF] ^ Td2[t0 >> 0x08 & 0xFF] ^ Td3[t3 >> 0x00 & 0xFF] ^ rk[6];
+        s3 = Td0[t3 >> 0x18 & 0xFF] ^ Td1[t2 >> 0x10 & 0xFF] ^ Td2[t1 >> 0x08 & 0xFF] ^ Td3[t0 >> 0x00 & 0xFF] ^ rk[7];
+
+        rk += 8;
+
+        r--;
+        if (r == 0) {
+            break;
+        }
+
+        t0 = Td0[s0 >> 0x18 & 0xFF] ^ Td1[s3 >> 0x10 & 0xFF] ^ Td2[s2 >> 0x08 & 0xFF] ^ Td3[s1 >> 0x00 & 0xFF] ^ rk[0];
+        t1 = Td0[s1 >> 0x18 & 0xFF] ^ Td1[s0 >> 0x10 & 0xFF] ^ Td2[s3 >> 0x08 & 0xFF] ^ Td3[s2 >> 0x00 & 0xFF] ^ rk[1];
+        t2 = Td0[s2 >> 0x18 & 0xFF] ^ Td1[s1 >> 0x10 & 0xFF] ^ Td2[s0 >> 0x08 & 0xFF] ^ Td3[s3 >> 0x00 & 0xFF] ^ rk[2];
+        t3 = Td0[s3 >> 0x18 & 0xFF] ^ Td1[s2 >> 0x10 & 0xFF] ^ Td2[s1 >> 0x08 & 0xFF] ^ Td3[s0 >> 0x00 & 0xFF] ^ rk[3];
+    }
+
+    t0 = (Td4[s0 >> 0x18 & 0xFF] & 0xFF000000) ^ (Td4[s3 >> 0x10 & 0xFF] & 0x00FF0000) ^
+         (Td4[s2 >> 0x08 & 0xFF] & 0x0000FF00) ^ (Td4[s1 >> 0x00 & 0xFF] & 0x000000FF) ^ rk[0];
+
+    pt[0x0] = t0 >> 0x18;
+    pt[0x1] = t0 >> 0x10;
+    pt[0x2] = t0 >> 0x08;
+    pt[0x3] = t0 >> 0x00;
+
+    t1 = (Td4[s1 >> 0x18 & 0xFF] & 0xFF000000) ^ (Td4[s0 >> 0x10 & 0xFF] & 0x00FF0000) ^
+         (Td4[s3 >> 0x08 & 0xFF] & 0x0000FF00) ^ (Td4[s2 >> 0x00 & 0xFF] & 0x000000FF) ^ rk[1];
+
+    pt[0x4] = t1 >> 0x18;
+    pt[0x5] = t1 >> 0x10;
+    pt[0x6] = t1 >> 0x08;
+    pt[0x7] = t1 >> 0x00;
+
+    t2 = (Td4[s2 >> 0x18 & 0xFF] & 0xFF000000) ^ (Td4[s1 >> 0x10 & 0xFF] & 0x00FF0000) ^
+         (Td4[s0 >> 0x08 & 0xFF] & 0x0000FF00) ^ (Td4[s3 >> 0x00 & 0xFF] & 0x000000FF) ^ rk[2];
+
+    pt[0x8] = t2 >> 0x18;
+    pt[0x9] = t2 >> 0x10;
+    pt[0xA] = t2 >> 0x08;
+    pt[0xB] = t2 >> 0x00;
+
+    t3 = (Td4[s3 >> 0x18 & 0xFF] & 0xFF000000) ^ (Td4[s2 >> 0x10 & 0xFF] & 0x00FF0000) ^
+         (Td4[s1 >> 0x08 & 0xFF] & 0x0000FF00) ^ (Td4[s0 >> 0x00 & 0xFF] & 0x000000FF) ^ rk[3];
+
+    pt[0xC] = t3 >> 0x18;
+    pt[0xD] = t3 >> 0x10;
+    pt[0xE] = t3 >> 0x08;
+    pt[0xF] = t3 >> 0x00;
+}
