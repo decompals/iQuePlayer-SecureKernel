@@ -43,6 +43,14 @@ x:
 #define WEAK(x, y)
 #endif
 
+#define DATA(x) \
+    .balign 4  ;\
+    .globl x   ;\
+    x:
+
+#define ENDDATA(x)  \
+    .size x, . - x
+
 #define STAY1(stmnt) .set noreorder; stmnt; .set reorder;
 #define STAY2(stmnt, arg1) .set noreorder; stmnt, arg1; .set reorder;
 #define STAY3(stmnt, arg1, arg2) .set noreorder; stmnt, arg1, arg2; .set reorder;

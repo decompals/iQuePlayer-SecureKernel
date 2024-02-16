@@ -2,22 +2,24 @@ OUTPUT_ARCH(mips)
 ENTRY(entrypoint)
 
 SECTIONS {
-    . = start;
 
-    .text : AT(0)
+    .text 0x9FC00000 : AT(0)
     {
         PROVIDE(entrypoint = .);
 
-        build/src/entry.o(.text*)
+        KEEP(build/src/entry.o(.text*));
         build/src/cache.o(.text*)
         build/src/invaldcache.o(.text*)
         build/src/9FC00B40.o(.text*)
         build/src/9FC01B60.o(.text*)
         build/src/9FC02700.o(.text*)
+        build/src/9FC02980.o(.text*)
         build/src/9FC031D0.o(.text*)
+        build/src/9FC03ED0.o(.text*)
         build/src/9FC03F10.o(.text*)
         build/src/9FC043B0.o(.text*)
         build/src/9FC04780.o(.text*)
+        build/src/root_pubkey.o(.text*)
         build/src/libcrypto/aes.o(.text*)
         build/src/libcrypto/aes_api.o(.text*)
         build/src/libcrypto/aes_imp.o(.text*)
@@ -28,23 +30,85 @@ SECTIONS {
         build/src/libcrypto/elliptic_math.o(.text*)
     }
 
-    .rodata : 
+    .rodata :
     {
-        /* TODO: Split */
-        build/asm/sk.rodata.o(.rodata*)
+        build/src/entry.o(.rodata*)
+        build/src/cache.o(.rodata*)
+        build/src/invaldcache.o(.rodata*)
+        build/src/9FC00B40.o(.rodata*)
+        build/src/9FC01B60.o(.rodata*)
+        build/src/9FC02700.o(.rodata*)
+        build/src/9FC02980.o(.rodata*)
+        build/src/9FC031D0.o(.rodata*)
+        build/src/9FC03ED0.o(.rodata*)
+        build/src/9FC03F10.o(.rodata*)
+        build/src/9FC043B0.o(.rodata*)
+        build/src/9FC04780.o(.rodata*)
+        build/src/root_pubkey.o(.rodata*)
+        build/src/libcrypto/aes.o(.rodata*)
+        build/src/libcrypto/aes_api.o(.rodata*)
+        build/src/libcrypto/aes_imp.o(.rodata*)
+        build/src/libcrypto/sha1.o(.rodata*)
+        build/src/libcrypto/bb_nn.o(.rodata*)
+        build/src/libcrypto/poly_math.o(.rodata*)
+        build/src/libcrypto/algorithms.o(.rodata*)
+        build/src/libcrypto/elliptic_math.o(.rodata*)
+
     }
 
     .data :
     {
-        /* TODO: Split */
-        build/asm/sk.data.o(.data*)
+        build/src/entry.o(.data*)
+        build/src/cache.o(.data*)
+        build/src/invaldcache.o(.data*)
+        build/src/9FC00B40.o(.data*)
+        build/src/9FC01B60.o(.data*)
+        build/src/9FC02700.o(.data*)
+        build/src/9FC02980.o(.data*)
+        build/src/9FC031D0.o(.data*)
+        build/src/9FC03ED0.o(.data*)
+        build/src/9FC03F10.o(.data*)
+        build/src/9FC043B0.o(.data*)
+        build/src/9FC04780.o(.data*)
+        build/src/root_pubkey.o(.data*)
+        build/src/libcrypto/aes.o(.data*)
+        build/src/libcrypto/aes_api.o(.data*)
+        build/src/libcrypto/aes_imp.o(.data*)
+        build/src/libcrypto/sha1.o(.data*)
+        build/src/libcrypto/bb_nn.o(.data*)
+        build/src/libcrypto/poly_math.o(.data*)
+        build/src/libcrypto/algorithms.o(.data*)
+        build/src/libcrypto/elliptic_math.o(.data*)
     }
 
-    .bss : 
+    .bss :
     {
-        /* TODO: Split */
         __bss_start = .;
-        build/asm/sk.bss.o(.bss*)
+#ifndef NON_MATCHING
+        /* force a matching bss order for COMMON symbols */
+        build/src/__bss.o(.bss)
+#endif
+        build/src/entry.o(.bss*)
+        build/src/cache.o(.bss*)
+        build/src/invaldcache.o(.bss*)
+        build/src/9FC00B40.o(.bss*)
+        build/src/9FC01B60.o(.bss*)
+        build/src/9FC02700.o(.bss*)
+        build/src/9FC02980.o(.bss*)
+        build/src/9FC031D0.o(.bss*)
+        build/src/9FC03ED0.o(.bss*)
+        build/src/9FC03F10.o(.bss*)
+        build/src/9FC043B0.o(.bss*)
+        build/src/9FC04780.o(.bss*)
+        build/src/root_pubkey.o(.bss*)
+        build/src/libcrypto/aes.o(.bss*)
+        build/src/libcrypto/aes_api.o(.bss*)
+        build/src/libcrypto/aes_imp.o(.bss*)
+        build/src/libcrypto/sha1.o(.bss*)
+        build/src/libcrypto/bb_nn.o(.bss*)
+        build/src/libcrypto/poly_math.o(.bss*)
+        build/src/libcrypto/algorithms.o(.bss*)
+        build/src/libcrypto/elliptic_math.o(.bss*)
         __bss_end = .;
     }
 

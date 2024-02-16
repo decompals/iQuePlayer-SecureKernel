@@ -1,21 +1,25 @@
 #include "bbtypes.h"
 #include "bcp.h"
 
-void delay(s32 arg0) {
+void delay(s32 n) {
     s32 i;
 
-    for(i = 0; i < arg0; i++);
+    for(i = 0; i < n; i++)
+#ifdef NON_MATCHING
+        __asm__ volatile ("")
+#endif
+        ;
 }
 
-void initialize_virage_controller(void* controller) {
-    u32 temp = (u32)controller & 0xFFFF0000;
+void initialize_virage_controller(u32 ctrlReg) {
+    u32 baseAddr = ctrlReg & 0xFFFF0000;
 
-    IO_WRITE(temp + 0x8000, 0x8A);
-    IO_WRITE(temp + 0x8004, 0x13);
-    IO_WRITE(temp + 0x8008, 0x80);
-    IO_WRITE(temp + 0x800C, 0x92);
-    IO_WRITE(temp + 0x8010, 0x18);
-    IO_WRITE(temp + 0x8014, 5);
+    IO_WRITE(baseAddr + 0x8000, 0x8A);
+    IO_WRITE(baseAddr + 0x8004, 0x13);
+    IO_WRITE(baseAddr + 0x8008, 0x80);
+    IO_WRITE(baseAddr + 0x800C, 0x92);
+    IO_WRITE(baseAddr + 0x8010, 0x18);
+    IO_WRITE(baseAddr + 0x8014, 5);
 }
 
 void initialize_virage_controllers(void) {
@@ -25,17 +29,14 @@ void initialize_virage_controllers(void) {
     initialize_virage_controller(VIRAGE2_STATUS_REG);
 }
 
-s32 write_virage_data(void* controller, s32 *data, s32 size) {
-    s32 temp_a0;
-    s32 temp_a1;
+s32 write_virage_data(u32 controller, u32 *data, s32 size) {
     s32 temp_lo;
     s32 temp_s1;
     u32 temp_s4;
     s32 i;
     u32 temp;
-    u32 temp2;
 
-    temp_s4 = (u32)controller & 0xFFFF0000;
+    temp_s4 = controller & 0xFFFF0000;
     temp_s1 = func_9FC04220();
     IO_WRITE(controller, 0);
     IO_WRITE(MI_1C_REG, (1000 / temp_s1) + 1);
@@ -59,7 +60,7 @@ s32 write_virage_data(void* controller, s32 *data, s32 size) {
     for(i = 0; i < size; i++) {
         IO_WRITE(temp_s4 + (i * 4), data[i]);
         temp = IO_READ(temp_s4 + (i * 4));
-        if(temp != data[i]) {
+        if (temp != data[i]) {
             return -1;
         }
     }
@@ -102,8 +103,8 @@ s32 func_9FC04220(void) {
     }
 }
 
-s32 func_9FC0425C(void* controller) {
-    u32 temp = (u32)controller | 0x2000;
+s32 func_9FC0425C(u32 controller) {
+    u32 temp = controller | 0x2000;
     s32 baseDelay;
 
     baseDelay = 44018 / func_9FC04220();
@@ -116,7 +117,7 @@ s32 func_9FC0425C(void* controller) {
     return 0;
 }
 
-s32 func_9FC04304(void* controller) {
+s32 func_9FC04304(u32 controller) {
     u32 temp2 = (u32)controller;
     u32 temp = (u32)controller | 0x2000;
     s32 var_v1;

@@ -2,9 +2,54 @@
 #include "libcrypto/poly_math.h"
 #include "macros.h"
 
+const field_2n poly_prime = {
+    { 0x00000200, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000400, 0x00000000, 0x00000001 },
+};
+
+const element rightmask[32] = {
+    0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000F, 0x0000001F, 0x0000003F, 0x0000007F,
+    0x000000FF, 0x000001FF, 0x000003FF, 0x000007FF, 0x00000FFF, 0x00001FFF, 0x00003FFF, 0x00007FFF,
+    0x0000FFFF, 0x0001FFFF, 0x0003FFFF, 0x0007FFFF, 0x000FFFFF, 0x001FFFFF, 0x003FFFFF, 0x007FFFFF,
+    0x00FFFFFF, 0x01FFFFFF, 0x03FFFFFF, 0x07FFFFFF, 0x0FFFFFFF, 0x1FFFFFFF, 0x3FFFFFFF, 0x7FFFFFFF,
+};
+
+const element leftmask[32] = {
+    0x00000000, 0x80000000, 0xC0000000, 0xE0000000, 0xF0000000, 0xF8000000, 0xFC000000, 0xFE000000,
+    0xFF000000, 0xFF800000, 0xFFC00000, 0xFFE00000, 0xFFF00000, 0xFFF80000, 0xFFFC0000, 0xFFFE0000,
+    0xFFFF0000, 0xFFFF8000, 0xFFFFC000, 0xFFFFE000, 0xFFFFF000, 0xFFFFF800, 0xFFFFFC00, 0xFFFFFE00,
+    0xFFFFFF00, 0xFFFFFF80, 0xFFFFFFC0, 0xFFFFFFE0, 0xFFFFFFF0, 0xFFFFFFF8, 0xFFFFFFFC, 0xFFFFFFFE,
+};
+
+const u8 shift_by[256] = {
+    8, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+};
+
+#ifndef NON_MATCHING
+#define ITER_TYPE short
+#define UNSIGNED
+#else
+#define ITER_TYPE unsigned
+#define UNSIGNED unsigned
+#endif
+
 void null(field_2n* a) {
     element* eptr = a->e;
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(a->e); i++) {
         *eptr++ = 0;
@@ -13,7 +58,7 @@ void null(field_2n* a) {
 
 void double_null(field_double* a) {
     element* eptr = a->e;
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(a->e); i++) {
         *eptr++ = 0;
@@ -24,7 +69,7 @@ void double_add(field_double* a, field_double* b, field_double* c) {
     element* aptr = a->e;
     element* bptr = b->e;
     element* cptr = c->e;
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(a->e); i++) {
         unsigned long tempA = *aptr++;
@@ -36,7 +81,7 @@ void double_add(field_double* a, field_double* b, field_double* c) {
 void copy(field_2n* from, field_2n* to) {
     element* fromptr = from->e;
     element* toptr = to->e;
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(from->e); i++) {
         *toptr++ = *fromptr++;
@@ -46,7 +91,7 @@ void copy(field_2n* from, field_2n* to) {
 void double_copy(field_double* from, field_double* to) {
     element* fromptr = from->e;
     element* toptr = to->e;
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(from->e); i++) {
         *toptr++ = *fromptr++;
@@ -54,7 +99,7 @@ void double_copy(field_double* from, field_double* to) {
 }
 
 void single_to_double(field_2n* from, field_double* to) {
-    short i;
+    ITER_TYPE i;
 
     double_null(to);
 
@@ -64,7 +109,7 @@ void single_to_double(field_2n* from, field_double* to) {
 }
 
 void double_to_single(field_double* from, field_2n* to) {
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(to->e); i++) {
         to->e[i] = from->e[i + ARRAY_COUNT(from->e) - ARRAY_COUNT(to->e)];
@@ -74,7 +119,7 @@ void double_to_single(field_double* from, field_2n* to) {
 void multiply_shift(field_double* a) {
     element* eptr = &a->e[ARRAY_COUNT(a->e) - 1];
     element bit = 0;
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(a->e); i++, eptr--) {
         element temp = *eptr;
@@ -124,7 +169,7 @@ void divide_shift_n(field_double* a, int n);
 INCLUDE_ASM("asm/non_matchings/libcrypto/poly_math", divide_shift_n);
 
 void extract_masked_bits(field_double* a, field_double* mask, field_double* result) {
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(a->e); i++) {
         result->e[i] = a->e[i] & mask->e[i];
@@ -132,7 +177,7 @@ void extract_masked_bits(field_double* a, field_double* mask, field_double* resu
 }
 
 void zero_masked_bits(field_double* a, field_double* mask) {
-    short i;
+    ITER_TYPE i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(a->e); i++) {
         a->e[i] &= ~mask->e[i];
@@ -184,11 +229,11 @@ void cus_times_u_to_n(field_2n* a, unsigned int n, field_2n* b) {
     field_double temp3;
     field_double temp_masked;
     field_double a_copy;
-    int moving_one;
-    int num_words_divide;
-    int num_bits_divide;
-    int i;
-    int j;
+    UNSIGNED int moving_one;
+    UNSIGNED int num_words_divide;
+    UNSIGNED int num_bits_divide;
+    UNSIGNED int i;
+    UNSIGNED int j;
     element* fromptr;
     element* temp1ptr;
     element* temp2ptr;
@@ -245,7 +290,7 @@ void cus_times_u_to_n(field_2n* a, unsigned int n, field_2n* b) {
 }
 
 void is_less_than(field_2n* a, field_2n* b, BSL_boolean* result) {
-    int i;
+    UNSIGNED int i;
 
     for (i = 0; i < (unsigned)ARRAY_COUNT(a->e); i++) {
         if (a->e[i] == b->e[i]) {
@@ -278,10 +323,10 @@ void poly_inv(field_2n* a, field_2n* dest);
 INCLUDE_ASM("asm/non_matchings/libcrypto/poly_math", poly_inv);
 
 void poly_rot_right(field_2n* a) {
-    element* eptr = a->e;
+    /* element* eptr; */
     element bit;
     element temp;
-    short i;
+    ITER_TYPE i;
 
     if (a->e[ARRAY_COUNT(a->e) - 1] & 1) {
         bit = 0x100;
