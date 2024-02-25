@@ -83,7 +83,7 @@ endif
 
 $(TARGET): $(ELF)
 	$(OBJCOPY) -O binary $< $(@:.bin=.tmp)
-	dd if=$(@:.bin=.tmp) of=$@ bs=16K conv=sync status=none
+	dd if=$(@:.bin=.tmp) of=$@ bs=64K conv=sync status=none
 	@$(RM) $(@:.bin=.tmp)
 
 build/sk.lcf: sk.lcf
