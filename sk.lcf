@@ -114,7 +114,7 @@ SECTIONS {
         build/src/libcrypto/algorithms.o(.bss*)
         build/src/libcrypto/elliptic_math.o(.bss*)
         __bss_end = .;
-    } > sram AT > flash
+    } > sram
 
     _gp = __bss_start + 0x8000 - 0x10;
 
