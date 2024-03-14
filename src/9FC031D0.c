@@ -14,7 +14,7 @@ s8 D_9FC0EBC4 = -1;
 void virage2_gen_public_key(u32* pubkeyOut) {
     u32 i;
 
-    for(i = 0; i < ARRAY_COUNT(virage2_offset->publicKey); i++) {
+    for (i = 0; i < ARRAY_COUNT(virage2_offset->publicKey); i++) {
         if (virage2_offset->publicKey[i] != 0) {
             wordcopy(pubkeyOut, virage2_offset->publicKey, ARRAY_COUNT(virage2_offset->publicKey));
             return;
@@ -24,7 +24,6 @@ void virage2_gen_public_key(u32* pubkeyOut) {
     eccGenPublicKey(pubkeyOut, virage2_offset->privateKey);
     wordcopy(virage2_offset->publicKey, pubkeyOut, ARRAY_COUNT(virage2_offset->publicKey));
 }
-
 
 void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
     s32 temp;
@@ -41,15 +40,15 @@ void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
     cur_proc_allowed_skc_bitmask = cmdHead->secureKernelRights;
 }
 
-s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey,
-                          const u32 certexponent, RsaSize rsaSize, u32* certsign) {
+s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey, const u32 certexponent,
+                         RsaSize rsaSize, u32* certsign) {
     u8 digest[0x14];
     SHA1Context sha1ctx;
     s32 i;
 
     SHA1Reset(&sha1ctx);
-    for(i = 0; i < numDataBlocks; i++) {
-        if(dataBlocks[i].size != 0) {
+    for (i = 0; i < numDataBlocks; i++) {
+        if (dataBlocks[i].size != 0) {
             SHA1Input(&sha1ctx, dataBlocks[i].data, dataBlocks[i].size);
         }
     }
@@ -57,8 +56,7 @@ s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32*
     return rsa_check_signature(digest, certpublickey, certexponent, rsaSize, certsign);
 }
 
-s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexponent, RsaSize rsaSize,
-                        u32* certsign) {
+s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexponent, RsaSize rsaSize, u32* certsign) {
     char result[512];
     s32 rsaBits;
     u32 rsaBytes;
@@ -91,7 +89,7 @@ s32 func_9FC03410(u32* randomOut, s32 nWords) {
         u32 words[5];
         u8 bytes[0x14];
     } spC38;
-    u8  randomByte;
+    u8 randomByte;
     s32 i;
     s32 j;
     s32 k;
@@ -99,12 +97,12 @@ s32 func_9FC03410(u32* randomOut, s32 nWords) {
     if (nWords > 8) {
         return -1;
     }
-    
+
     do {
-        for(i = 0; i < 125; i++) {
-            for(j = 0; j < 0x200; j++) {
+        for (i = 0; i < 125; i++) {
+            for (j = 0; j < 0x200; j++) {
                 randomByte = 0;
-                for(k = 0; k < 8; k++) {
+                for (k = 0; k < 8; k++) {
                     randomByte += ((IO_READ(MI_RANDOM_BIT) & 1) << k);
                 }
                 randomBytes[j] = randomByte;
@@ -168,12 +166,12 @@ s32 verify_ecc_signature(u8* data, u32 datasize, u32* public_key, u32* signature
 }
 
 s32 func_9FC0374C(void) {
-    while(IO_READ(PI_STATUS_REG) & ((1 << 1) | (1 << 0))) {
-        if ((IO_READ(PI_STATUS_REG) & (1 << 2))) {
+    while (IO_READ(PI_STATUS_REG) & (PI_STATUS_IO_BUSY | PI_STATUS_DMA_BUSY)) {
+        if ((IO_READ(PI_STATUS_REG) & PI_STATUS_ERROR)) {
             return -1;
         }
     }
-    IO_WRITE(PI_STATUS_REG, (1 << 1));
+    IO_WRITE(PI_STATUS_REG, PI_CLR_INTR);
     return 0;
 }
 
@@ -207,7 +205,7 @@ void AES_Run(s32 bufSelect, s32 continuation) {
     } else {
         ctrl |= 0x9A;
     }
-    ctrl |= (0x200/0x10-1) << 16;
+    ctrl |= (0x200 / 0x10 - 1) << 16;
 
     IO_WRITE(PI_AES_CTRL_REG, ctrl);
 }
@@ -220,9 +218,9 @@ s32 card_read_page(u32 block, s32 bufSelect) {
     } else {
         IO_WRITE(PI_CARD_CNT_REG, 0x9F008A10 | 0);
     }
-    
+
     do {
-        if((IO_READ(MI_HW_INTR_REG) & 0x02000000) != 0) {
+        if ((IO_READ(MI_HW_INTR_REG) & 0x02000000) != 0) {
             IO_WRITE(PI_CARD_CNT_REG, 0);
             return -3;
         }
@@ -237,9 +235,10 @@ s32 card_read_page(u32 block, s32 bufSelect) {
 // TODO: File split here?
 
 char* strchr(char* str, char c) {
-    for( ; *str != c; str++) {
-        if(*str == '\0')
+    for (; *str != c; str++) {
+        if (*str == '\0') {
             return NULL;
+        }
     }
 
     return str;
@@ -361,7 +360,7 @@ s32 calc_virage01_checksum(void* d) {
     s32 i;
 
     sum = 0;
-    for(i = 0; i < 0x20; i++) {
+    for (i = 0; i < 0x20; i++) {
         sum += data[i];
     }
     return sum;
@@ -389,13 +388,13 @@ s32 write_virage01_data(BbVirage01* virageData) {
     if (D_9FC0EBC4 == 1) {
         virageController = VIRAGE0_BASE_ADDR;
     } else {
-        virageController = VIRAGE1_BASE_ADDR;  
+        virageController = VIRAGE1_BASE_ADDR;
     }
-    
+
     if (write_virage_data(virageController | 0xC000, (void*)virageData, 0x10) < 0) {
         return -1;
     }
-    
+
     D_9FC0EBC4 ^= 1;
     return 0;
 }
@@ -426,13 +425,16 @@ s32 set_virage01_selector(BbVirage01* virageData) {
     }
 
     if (v1WriteCount < v0WriteCount) {
-        // if the v1 write count is less than the v0 write count (or if v1 failed the checksum), use v0 data but use v1 for writes
-        if ((func_9FC0425C(VIRAGE0_STATUS_REG) < 0) || (read_virage01((void*)PHYS_TO_K1(VIRAGE0_BASE_ADDR), virageData) < 0)) {
+        // if the v1 write count is less than the v0 write count (or if v1 failed the checksum), use v0 data but use v1
+        // for writes
+        if ((func_9FC0425C(VIRAGE0_STATUS_REG) < 0) ||
+            (read_virage01((void*)PHYS_TO_K1(VIRAGE0_BASE_ADDR), virageData) < 0)) {
             return -1;
         }
         D_9FC0EBC4 = 0;
     } else {
-        // if the v0 write count is less than the v1 write count (or if v0 failed the checksum), use v1 data but use v0 for writes
+        // if the v0 write count is less than the v1 write count (or if v0 failed the checksum), use v1 data but use v0
+        // for writes
         D_9FC0EBC4 = 1;
     }
     return 0;
@@ -440,7 +442,7 @@ s32 set_virage01_selector(BbVirage01* virageData) {
 
 extern BbVirage01 D_9FC0F308;
 
-u16 *getTrialConsumptionByTid(BbTicketId tid) {
+u16* getTrialConsumptionByTid(BbTicketId tid) {
     tid &= 0x7FFF;
 
     if ((tid < D_9FC0F308.tidWindow) || (tid >= (s32)(D_9FC0F308.tidWindow + ARRAY_COUNT(D_9FC0F308.cc)))) {
@@ -481,7 +483,8 @@ s32 check_cert_ranges(BbCertBase** arg0) {
         }
     } else {
         // ECC -> RSA -> RSA
-        if (CHECK_UNTRUSTED((BbEccCert*)arg0[0]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[1]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[2])) {
+        if (CHECK_UNTRUSTED((BbEccCert*)arg0[0]) && CHECK_UNTRUSTED((BbRsaCert*)arg0[1]) &&
+            CHECK_UNTRUSTED((BbRsaCert*)arg0[2])) {
             return TRUE;
         }
     }
