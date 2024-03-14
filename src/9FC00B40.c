@@ -27,11 +27,8 @@ u16 g_cur_proc_trial_type = 0xFFFF;
 u32 D_9FC0EBB8 = 0;
 
 s32 check_ticket_bundle_ranges(BbTicketBundle* bundle) {
-    if (
-            CHECK_UNTRUSTED(bundle) &&
-            CHECK_UNTRUSTED(bundle->ticket) &&
-            check_cert_ranges(bundle->ticketChain) &&
-            check_cert_ranges(bundle->cmdChain)) {
+    if (CHECK_UNTRUSTED(bundle) && CHECK_UNTRUSTED(bundle->ticket) && check_cert_ranges(bundle->ticketChain) &&
+        check_cert_ranges(bundle->cmdChain)) {
         return TRUE;
     }
 
@@ -76,13 +73,8 @@ s32 func_9FC00BAC(BbTicketBundle* bundle) {
     blocks[0].data = bundle->ticket;
     blocks[0].size = sizeof(BbTicket) - sizeof(BbRsaSig2048);
 
-    if (rsa_verify_signature(
-            blocks,
-            1,
-            ((BbRsaCert*) bundle->ticketChain[0])->publicKey,
-            ((BbRsaCert*) bundle->ticketChain[0])->exponent,
-            0,
-            bundle->ticket->head.ticketSign) >= 0) {
+    if (rsa_verify_signature(blocks, 1, ((BbRsaCert*)bundle->ticketChain[0])->publicKey,
+                             ((BbRsaCert*)bundle->ticketChain[0])->exponent, 0, bundle->ticket->head.ticketSign) >= 0) {
         memcpy(&contentMetaDataHead, cmdHead, sizeof(BbContentMetaDataHead));
         eccGenAesKey(head->serverKey, virage2_offset->privateKey, key1);
         aes_SwDecrypt((u8*)key1, (u8*)head->cmdIv, (u8*)cmdHead->key, sizeof(BbAesKey), (u8*)contentMetaDataHead.key);
@@ -92,13 +84,9 @@ s32 func_9FC00BAC(BbTicketBundle* bundle) {
         blocks[1].data = &contentMetaDataHead;
         blocks[1].size = sizeof(BbContentMetaDataHead) - sizeof(BbRsaSig2048);
 
-        if (rsa_verify_signature(
-                blocks,
-                2,
-                ((BbRsaCert*) bundle->cmdChain[0])->publicKey,
-                ((BbRsaCert*) bundle->cmdChain[0])->exponent,
-                0,
-                bundle->ticket->cmd.head.contentMetaDataSign) >= 0) {
+        if (rsa_verify_signature(blocks, 2, ((BbRsaCert*)bundle->cmdChain[0])->publicKey,
+                                 ((BbRsaCert*)bundle->cmdChain[0])->exponent, 0,
+                                 bundle->ticket->cmd.head.contentMetaDataSign) >= 0) {
             aes_SwDecrypt((u8*)virage2_offset->bootAppKey, (u8*)cmdHead->commonCmdIv, (u8*)contentMetaDataHead.key,
                           sizeof(BbAesKey), (u8*)key2);
             memcpy(contentMetaDataHead.key, key2, sizeof(BbAesKey));
@@ -193,7 +181,7 @@ s32 skLaunch(void* app_entrypoint) {
     }
 
     if (!(contentMetaDataHead.execFlags & 2)) {
-        ptr = (u8*) app_entrypoint - 0x1000;
+        ptr = (u8*)app_entrypoint - 0x1000;
 
         if (!check_untrusted_ptr_range(ptr, contentMetaDataHead.size, 4)) {
             return -1;
@@ -211,7 +199,7 @@ s32 skLaunch(void* app_entrypoint) {
     g_cur_proc_trial_type = 0xffff;
     D_9FC0F304 = ticketHead.limit;
 
-    if ((s16) ticketHead.tid < 0) {
+    if ((s16)ticketHead.tid < 0) {
         cc = getTrialConsumptionByTid(ticketHead.tid);
 
         if (cc == NULL) {
@@ -259,12 +247,12 @@ s32 skLaunch(void* app_entrypoint) {
     }
 
     // launch the app, this does not return
-    __asm__(
-        "move $v0, %0;"
-        "la   $t0, %1;"
-        "jr   $t0;"
-        : : "r" (app_entrypoint), "i" (launch_app_trampoline) : "v0", "t0"
-    );
+    __asm__("move $v0, %0;"
+            "la   $t0, %1;"
+            "jr   $t0;"
+            :
+            : "r"(app_entrypoint), "i"(launch_app_trampoline)
+            : "v0", "t0");
 
     return -1;
 }
@@ -324,7 +312,9 @@ s32 func_9FC0134C(u8* buf, u32 size, s32 isRecrypt) {
         AES_Run(0, D_9FC0F2E0);
         D_9FC0F2E0 = TRUE;
 
-        while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY);
+        while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY) {
+            ;
+        }
 
         left = contentMetaDataHead.size - D_9FC0F0DC;
 
@@ -356,7 +346,7 @@ s32 skRecryptData(u8* buf, u32 size) {
 
     if (D_9FC0F2DC == TRUE) {
         iv1 = &D_9FC0F2E4;
-        iv2 = (BbAesIv*) (buf + size - sizeof(BbAesIv));
+        iv2 = (BbAesIv*)(buf + size - sizeof(BbAesIv));
 
         if (buf == NULL) {
             iv1 = &contentMetaDataHead.iv;
@@ -378,7 +368,7 @@ s32 skRecryptData(u8* buf, u32 size) {
 }
 
 s32 skRecryptComputeState(u8* buf, u32 size) {
-    BbAesIv* src = (BbAesIv*) (buf + size - sizeof(BbAesIv));
+    BbAesIv* src = (BbAesIv*)(buf + size - sizeof(BbAesIv));
 
     if (!CHECK_UNTRUSTED_ARRAY(buf, size)) {
         return -1;
@@ -446,10 +436,8 @@ s32 skVerifyHash(BbShaHash* hash, u32* signature, BbCertBase** certChain, BbAppL
             return -1;
         }
 
-        if (verify_all_crlbundles(
-                &crls->carl, D_9FC0F308.caCrlVersion,
-                &crls->cprl, D_9FC0F308.cpCrlVersion,
-                &crls->tsrl, D_9FC0F308.tsCrlVersion)) {
+        if (verify_all_crlbundles(&crls->carl, D_9FC0F308.caCrlVersion, &crls->cprl, D_9FC0F308.cpCrlVersion,
+                                  &crls->tsrl, D_9FC0F308.tsCrlVersion)) {
             return -1;
         }
 
@@ -479,16 +467,11 @@ s32 skVerifyHash(BbShaHash* hash, u32* signature, BbCertBase** certChain, BbAppL
                 }
             }
 
-            return rsa_check_signature(
-                (u8*)hash,
-                ((BbRsaCert*) certChain[CRL_TS])->publicKey,
-                ((BbRsaCert*) certChain[CRL_TS])->exponent,
-                0,
-                signature);
+            return rsa_check_signature((u8*)hash, ((BbRsaCert*)certChain[CRL_TS])->publicKey,
+                                       ((BbRsaCert*)certChain[CRL_TS])->exponent, 0, signature);
         }
 
-        ret = verify_ecc_signature((u8*)hash, sizeof(*hash), ((BbEccCert*)certChain[CRL_TS])->publicKey,
-                                   signature, 1);
+        ret = verify_ecc_signature((u8*)hash, sizeof(*hash), ((BbEccCert*)certChain[CRL_TS])->publicKey, signature, 1);
     } else {
         virage2_gen_public_key(key);
 

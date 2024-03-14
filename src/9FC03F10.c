@@ -4,11 +4,11 @@
 void delay(s32 n) {
     s32 i;
 
-    for(i = 0; i < n; i++)
+    for (i = 0; i < n; i++) {
 #ifdef NON_MATCHING
-        __asm__ volatile ("")
+        __asm__ volatile("");
 #endif
-        ;
+    }
 }
 
 void initialize_virage_controller(u32 ctrlReg) {
@@ -29,7 +29,7 @@ void initialize_virage_controllers(void) {
     initialize_virage_controller(VIRAGE2_STATUS_REG);
 }
 
-s32 write_virage_data(u32 controller, u32 *data, s32 size) {
+s32 write_virage_data(u32 controller, u32* data, s32 size) {
     s32 temp_lo;
     s32 temp_s1;
     u32 temp_s4;
@@ -57,7 +57,7 @@ s32 write_virage_data(u32 controller, u32 *data, s32 size) {
         return -1;
     }
 
-    for(i = 0; i < size; i++) {
+    for (i = 0; i < size; i++) {
         IO_WRITE(temp_s4 + (i * 4), data[i]);
         temp = IO_READ(temp_s4 + (i * 4));
         if (temp != data[i]) {
@@ -69,10 +69,10 @@ s32 write_virage_data(u32 controller, u32 *data, s32 size) {
         return -1;
     }
 
-    for(i = 0; i < size; i++) {
+    for (i = 0; i < size; i++) {
         IO_WRITE(temp_s4 + (i * 4), 0);
         temp = IO_READ(temp_s4 + (i * 4));
-        if(temp != 0) {
+        if (temp != 0) {
             return -1;
         }
     }
@@ -81,9 +81,9 @@ s32 write_virage_data(u32 controller, u32 *data, s32 size) {
         return -1;
     }
 
-    for(i = 0; i < size; i++) {
+    for (i = 0; i < size; i++) {
         temp = IO_READ(temp_s4 + (i * 4));
-        if(temp != data[i]) {
+        if (temp != data[i]) {
             return -1;
         }
     }
@@ -94,12 +94,12 @@ s32 write_virage_data(u32 controller, u32 *data, s32 size) {
 s32 func_9FC04220(void) {
     u32 temp = (IO_READ(PI_MISC_REG) >> 25) & 3;
 
-    if(temp == 0) {
+    if (temp == 0) {
         return 16;
-    } else if(temp == 1) {
+    } else if (temp == 1) {
         return 12;
     } else {
-       return 10;
+        return 10;
     }
 }
 
@@ -129,7 +129,7 @@ s32 func_9FC04304(u32 controller) {
         return -1;
     }
 
-    for(var_v1 = IO_READ(temp2); !(var_v1 & 0x40000000); var_v1 = IO_READ(temp2)) {
+    for (var_v1 = IO_READ(temp2); !(var_v1 & 0x40000000); var_v1 = IO_READ(temp2)) {
         delay(100);
     }
 

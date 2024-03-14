@@ -10,8 +10,6 @@ SECTIONS {
 
     .text :
     {
-        PROVIDE(entrypoint = .);
-
         KEEP(build/src/entry.o(.text*));
         build/src/cache.o(.text*)
         build/src/invaldcache.o(.text*)

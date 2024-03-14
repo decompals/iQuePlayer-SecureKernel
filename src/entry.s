@@ -20,8 +20,8 @@ DATA(skc_table)
     .word skSetLimit
     .word skExit
     .word skKeepAlive
-ENDDATA(skc_table)
 skc_table_end:
+ENDDATA(skc_table)
 
 DATA(skc_table_size)
     .word (skc_table_end - skc_table) / 4

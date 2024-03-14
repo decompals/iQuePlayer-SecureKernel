@@ -16,7 +16,8 @@ s32 recrypt_list_verify_ecc_sig(RecryptList* list) {
 }
 
 void recrypt_list_sign(RecryptList* list) {
-    func_9FC03694((u8*)&list->numEntries, list->numEntries * sizeof(RecryptListEntry) + 4, virage2_offset->privateKey, &list->signature, 0x06091968);
+    func_9FC03694((u8*)&list->numEntries, list->numEntries * sizeof(RecryptListEntry) + 4, virage2_offset->privateKey,
+                  &list->signature, 0x06091968);
 }
 
 s32 recrypt_list_clear(RecryptList* list) {
@@ -30,7 +31,7 @@ void recrypt_list_decrypt_entry(RecryptListEntry* entry, RecryptList* list, u32 
     BbAesIv recryptListEntryIv;
     u32 i;
 
-    for(i = 0; i < ARRAY_COUNT(recryptListEntryIv); i++) {
+    for (i = 0; i < ARRAY_COUNT(recryptListEntryIv); i++) {
         recryptListEntryIv[i] = virage2_offset->bbId + i;
     }
     aes_SwDecrypt((u8*)virage2_offset->recryptListKey, (u8*)recryptListEntryIv, (u8*)&list->entries[index],
@@ -42,7 +43,7 @@ void recrypt_list_add_entry(RecryptListEntry* entry, RecryptList* list, u32 entr
     BbAesIv recryptListEntryIv;
     u32 i;
 
-    for(i = 0; i < ARRAY_COUNT(recryptListEntryIv); i++) {
+    for (i = 0; i < ARRAY_COUNT(recryptListEntryIv); i++) {
         recryptListEntryIv[i] = virage2_offset->bbId + i;
     }
     aes_SwEncrypt((u8*)virage2_offset->recryptListKey, (u8*)recryptListEntryIv, (u8*)entry, sizeof(RecryptListEntry),
@@ -56,7 +57,7 @@ s32 recrypt_list_get_entry_for_cid(RecryptList* list, BbContentId contentId, Rec
     for (i = 0; i < (u32)list->numEntries; i++) {
         recrypt_list_decrypt_entry(entry, list, i);
         if (entry->contentId == contentId) {
-        	return i;
+            return i;
         }
     }
 
@@ -65,7 +66,7 @@ s32 recrypt_list_get_entry_for_cid(RecryptList* list, BbContentId contentId, Rec
 
 s32 recrypt_list_verify_size_and_sig(RecryptList* list) {
     if ((s32)(list->numEntries * sizeof(RecryptListEntry) + 0x44) < 0x4000) { // TODO: offsetof?
-    	return recrypt_list_verify_ecc_sig(list);
+        return recrypt_list_verify_ecc_sig(list);
     }
 
     return -1;
@@ -78,7 +79,7 @@ s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, u32 arg
     if (recrypt_list_verify_size_and_sig(list) != 0) {
         return -1;
     }
-    
+
     index = recrypt_list_get_entry_for_cid(list, contentId, &entry);
     if (index < 0) {
         return index;

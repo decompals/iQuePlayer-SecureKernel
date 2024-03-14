@@ -3,7 +3,7 @@
 #include "macros.h"
 
 s32 cert_get_size(BbCertBase* certBase) {
-    switch(certBase->certType) {
+    switch (certBase->certType) {
         case 0:
             return sizeof(BbEccCert);
         case 1:
@@ -14,7 +14,7 @@ s32 cert_get_size(BbCertBase* certBase) {
 }
 
 s32 cert_get_signature_size(BbCertBase* certBase) {
-    switch(certBase->sigType) {
+    switch (certBase->sigType) {
         case 0:
         case 1:
             return sizeof(BbRsaSig4096);
@@ -23,7 +23,6 @@ s32 cert_get_signature_size(BbCertBase* certBase) {
         default:
             return -1;
     }
-
 }
 
 s32 cert_get_signature(BbCertBase* certBase, void** out) { // TODO: rename cert_get_signature
@@ -63,7 +62,8 @@ s32 verify_cert_signature(BbCertBase* toVerify, BbRsaCert* toVeryifyAgainst) {
     if (strcmp((const char*)toVerify->issuer, "Root") == 0) {
         return rsa_verify_signature(&dataBlock, 1, rootRSAPublicKey, rootRSAExponent, 1, signature);
     } else if ((u32)toVerify->sigType < 2u) {
-        return rsa_verify_signature(&dataBlock, 1, toVeryifyAgainst->publicKey, toVeryifyAgainst->exponent, toVerify->sigType, signature);
+        return rsa_verify_signature(&dataBlock, 1, toVeryifyAgainst->publicKey, toVeryifyAgainst->exponent,
+                                    toVerify->sigType, signature);
     }
 
     return -1;
@@ -79,7 +79,7 @@ s32 verify_cert_chain(BbCertBase** certChain, s32 serverType) {
     }
 
     for (i = 0; i < MAX_CERTS; i++) {
-        if((serverType != 0) && strncmp((const char*)certChain[i]->name.server, serverName, 2) != 0) {
+        if (serverType != 0 && strncmp((const char*)certChain[i]->name.server, serverName, 2) != 0) {
             return -1;
         }
 
@@ -87,7 +87,7 @@ s32 verify_cert_chain(BbCertBase** certChain, s32 serverType) {
             return verify_cert_signature(certChain[i], NULL);
         }
 
-        if ((verify_cert_signature(certChain[i], (BbRsaCert*)certChain[i + 1]) != 0)){
+        if (verify_cert_signature(certChain[i], (BbRsaCert*)certChain[i + 1]) != 0) {
             return -1;
         }
     }

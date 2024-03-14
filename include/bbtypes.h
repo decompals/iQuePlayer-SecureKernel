@@ -193,8 +193,8 @@ typedef struct {
 
 #define RECRYPT_LIST_MAX_SIZE 0x4000
 
-s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
-s32 check_unknown_range(void* ptr, u32 size, u32 alignment);
+s32 check_untrusted_ptr_range(void* pointer, u32 size, u32 alignment);
+s32 check_unknown_range(void* pointer, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \
     check_untrusted_ptr_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
@@ -228,7 +228,7 @@ void set_proc_permissions(BbContentMetaDataHead* cmdHead);
 s32 recrypt_list_verify_size_and_sig(RecryptList* list);
 s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, u32 arg2);
 s32 dma_from_cart(s32 bufSelect, void* outBuf, s32 length, s32 direction);
-void AES_Run(s32 arg0, s32 continuation);
+void AES_Run(s32 bufSelect, s32 continuation);
 void func_9FC03694(u8* data, u32 datasize, u32* private_key, BbEccSig* signature, u32 identity);
 s32 check_crlbundle_ranges(BbAppLaunchCrls* launchCrls);
 s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion,
@@ -244,8 +244,8 @@ s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBa
                                         BbAppLaunchCrls* appLaunchCrls);
 void osInvalDCache(void* buf, s32 len);
 s32 func_9FC04220(void);
-s32 func_9FC0425C(u32 ctrlReg);
-s32 func_9FC04304(u32 ctrlReg);
+s32 func_9FC0425C(u32 controller);
+s32 func_9FC04304(u32 controller);
 void* wordcopy(void* dst, void* src, s32 nWords);
 s32 func_9FC047CC(u8* a0, s32 a1);
 void initialize_virage_controllers(void);

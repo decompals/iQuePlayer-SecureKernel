@@ -486,7 +486,7 @@ void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigi
     t[0] = 1;
 
     ciBits = bigint_digits(c, cDigits) - 1;
-    for (i = ciBits; i >= 0 ; i--) {
+    for (i = ciBits; i >= 0; i--) {
         ci = c[i];
         setbits = 32;
         if ((unsigned)i == ciBits) {
