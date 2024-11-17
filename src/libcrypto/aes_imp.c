@@ -358,12 +358,98 @@ const u32 rcon[] = {
     0x20000000, 0x40000000, 0x80000000, 0x1B000000, 0x36000000,
 };
 
-int rijndaelKeySetupEnc(u32* rk, u8* cipherKey, int keyBits);
-#if 0
-    int i;
+#define ARRSHFT(arr, i, s1, s2) \
+    ((arr)[((i) >> (s1)) & 0xFF] & (0xFF << (s2)))
+
+#define ARRSHFT2(arr, i, s1) \
+    ((arr)[((i) >> (s1)) & 0xFF])
+
+#define U8x4_TO_U32(arr, i) \
+    ((arr)[(i) + 0] << 0x18) ^ ((arr)[(i) + 1] << 0x10) ^ ((arr)[(i) + 2] << 0x08) ^ ((arr)[(i) + 3] << 0x00)
+
+#define U32_TO_U8x4(arr, i, w)        \
+    {                                 \
+        (arr)[(i) + 0] = ((w) >> 24); \
+        (arr)[(i) + 1] = ((w) >> 16); \
+        (arr)[(i) + 2] = ((w) >>  8); \
+        (arr)[(i) + 3] = ((w) >>  0); \
+    }
+
+#define SWAP(x, y, temp) \
+    { (temp) = (x); (x) = (y); (y) = (temp); }
+
+int rijndaelKeySetupEnc(u32* rk, u8* cipherKey, int keyBits) {
+    int i = 0;
     u32 temp;
-#endif
-INCLUDE_ASM("asm/non_matchings/libcrypto/aes_imp", rijndaelKeySetupEnc);
+
+    rk[0] = U8x4_TO_U32(cipherKey,  0);
+    rk[1] = U8x4_TO_U32(cipherKey,  4);
+    rk[2] = U8x4_TO_U32(cipherKey,  8);
+    rk[3] = U8x4_TO_U32(cipherKey, 12);
+
+    if (keyBits == 128) {
+        for (;;) {
+            temp  = rk[3];
+            rk[4] = rk[0] ^ ARRSHFT(Te4, temp, 16, 24) ^ ARRSHFT(Te4, temp,  8, 16)
+                          ^ ARRSHFT(Te4, temp,  0,  8) ^ ARRSHFT(Te4, temp, 24,  0)
+                          ^ rcon[i];
+            rk[5] = rk[1] ^ rk[4];
+            rk[6] = rk[2] ^ rk[5];
+            rk[7] = rk[3] ^ rk[6];
+            if (++i == 10) {
+                return 10;
+            }
+            rk += 4;
+        }
+    }
+
+    rk[4] = U8x4_TO_U32(cipherKey, 16);
+    rk[5] = U8x4_TO_U32(cipherKey, 20);
+
+    if (keyBits == 192) {
+        for (;;) {
+            temp  = rk[5];
+            rk[6] = rk[0] ^ ARRSHFT(Te4, temp, 16, 24) ^ ARRSHFT(Te4, temp,  8, 16)
+                          ^ ARRSHFT(Te4, temp,  0,  8) ^ ARRSHFT(Te4, temp, 24,  0)
+                          ^ rcon[i];
+            rk[7] = rk[1] ^ rk[6];
+            rk[8] = rk[2] ^ rk[7];
+            rk[9] = rk[3] ^ rk[8];
+            if (++i == 8) {
+                return 12;
+            }
+            rk[10] = rk[4] ^ rk[9];
+            rk[11] = rk[5] ^ rk[10];
+            rk += 6;
+        }
+    }
+
+    rk[6] = U8x4_TO_U32(cipherKey, 24);
+    rk[7] = U8x4_TO_U32(cipherKey, 28);
+
+    if (keyBits == 256) {
+        for (;;) {
+            temp  = rk[7];
+            rk[8] = rk[0] ^ ARRSHFT(Te4, temp, 16, 24) ^ ARRSHFT(Te4, temp,  8, 16)
+                          ^ ARRSHFT(Te4, temp,  0,  8) ^ ARRSHFT(Te4, temp, 24,  0)
+                          ^ rcon[i];
+            rk[9] = rk[1] ^ rk[8];
+            rk[10] = rk[2] ^ rk[9];
+            rk[11] = rk[3] ^ rk[10];
+            if (++i == 7) {
+                return 14;
+            }
+            temp  = rk[11];
+            rk[12] = rk[4] ^ ARRSHFT(Te4, temp, 24, 24) ^ ARRSHFT(Te4, temp, 16, 16)
+                           ^ ARRSHFT(Te4, temp,  8,  8) ^ ARRSHFT(Te4, temp,  0,  0);
+            rk[13] = rk[5] ^ rk[12];
+            rk[14] = rk[6] ^ rk[13];
+            rk[15] = rk[7] ^ rk[14];
+            rk += 8;
+        }
+    }
+    return 0;
+}
 
 int rijndaelKeySetupDec(u32* rk, u8* cipherKey, int keyBits) {
     int Nr;
@@ -374,43 +460,31 @@ int rijndaelKeySetupDec(u32* rk, u8* cipherKey, int keyBits) {
     Nr = rijndaelKeySetupEnc(rk, cipherKey, keyBits);
 
     for (i = 0, j = Nr * 4; i < j; i += 4, j -= 4) {
-        temp = rk[i + 0];
-        rk[i + 0] = rk[j + 0];
-        rk[j + 0] = temp;
-
-        temp = rk[i + 1];
-        rk[i + 1] = rk[j + 1];
-        rk[j + 1] = temp;
-
-        temp = rk[i + 2];
-        rk[i + 2] = rk[j + 2];
-        rk[j + 2] = temp;
-
-        temp = rk[i + 3];
-        rk[i + 3] = rk[j + 3];
-        rk[j + 3] = temp;
+        SWAP(rk[i + 0], rk[j + 0], temp);
+        SWAP(rk[i + 1], rk[j + 1], temp);
+        SWAP(rk[i + 2], rk[j + 2], temp);
+        SWAP(rk[i + 3], rk[j + 3], temp);
     }
 
     for (i = 1; i < Nr; i++) {
         rk += 4;
 
-        rk[0] = Td0[Te4[(rk[0] >> 0x18) & 0xFF] & 0xFF] ^ Td1[Te4[(rk[0] >> 0x10) & 0xFF] & 0xFF] ^
-                Td2[Te4[(rk[0] >> 0x08) & 0xFF] & 0xFF] ^ Td3[Te4[(rk[0] >> 0x00) & 0xFF] & 0xFF];
+        rk[0] = Td0[ARRSHFT(Te4, rk[0], 24, 0)] ^ Td1[ARRSHFT(Te4, rk[0], 16, 0)] ^
+                Td2[ARRSHFT(Te4, rk[0],  8, 0)] ^ Td3[ARRSHFT(Te4, rk[0],  0, 0)];
 
-        rk[1] = Td0[Te4[(rk[1] >> 0x18) & 0xFF] & 0xFF] ^ Td1[Te4[(rk[1] >> 0x10) & 0xFF] & 0xFF] ^
-                Td2[Te4[(rk[1] >> 0x08) & 0xFF] & 0xFF] ^ Td3[Te4[(rk[1] >> 0x00) & 0xFF] & 0xFF];
+        rk[1] = Td0[ARRSHFT(Te4, rk[1], 24, 0)] ^ Td1[ARRSHFT(Te4, rk[1], 16, 0)] ^
+                Td2[ARRSHFT(Te4, rk[1],  8, 0)] ^ Td3[ARRSHFT(Te4, rk[1],  0, 0)];
 
-        rk[2] = Td0[Te4[(rk[2] >> 0x18) & 0xFF] & 0xFF] ^ Td1[Te4[(rk[2] >> 0x10) & 0xFF] & 0xFF] ^
-                Td2[Te4[(rk[2] >> 0x08) & 0xFF] & 0xFF] ^ Td3[Te4[(rk[2] >> 0x00) & 0xFF] & 0xFF];
+        rk[2] = Td0[ARRSHFT(Te4, rk[2], 24, 0)] ^ Td1[ARRSHFT(Te4, rk[2], 16, 0)] ^
+                Td2[ARRSHFT(Te4, rk[2],  8, 0)] ^ Td3[ARRSHFT(Te4, rk[2],  0, 0)];
 
-        rk[3] = Td0[Te4[(rk[3] >> 0x18) & 0xFF] & 0xFF] ^ Td1[Te4[(rk[3] >> 0x10) & 0xFF] & 0xFF] ^
-                Td2[Te4[(rk[3] >> 0x08) & 0xFF] & 0xFF] ^ Td3[Te4[(rk[3] >> 0x00) & 0xFF] & 0xFF];
+        rk[3] = Td0[ARRSHFT(Te4, rk[3], 24, 0)] ^ Td1[ARRSHFT(Te4, rk[3], 16, 0)] ^
+                Td2[ARRSHFT(Te4, rk[3],  8, 0)] ^ Td3[ARRSHFT(Te4, rk[3],  0, 0)];
     }
     return Nr;
 }
 
-void rijndaelEncrypt(u32* rk, int Nr, u8* pt, u8* ct);
-#if 0
+void rijndaelEncrypt(u32* rk, int Nr, u8* pt, u8* ct) {
     u32 s0;
     u32 s1;
     u32 s2;
@@ -421,8 +495,48 @@ void rijndaelEncrypt(u32* rk, int Nr, u8* pt, u8* ct);
     u32 t3;
     int r;
 
-#endif
-INCLUDE_ASM("asm/non_matchings/libcrypto/aes_imp", rijndaelEncrypt);
+    s0 = U8x4_TO_U32(pt,  0) ^ rk[0];
+    s1 = U8x4_TO_U32(pt,  4) ^ rk[1];
+    s2 = U8x4_TO_U32(pt,  8) ^ rk[2];
+    s3 = U8x4_TO_U32(pt, 12) ^ rk[3];
+
+    r = Nr >> 1;
+    for (;;) {
+        t0 = ARRSHFT2(Te0, s0, 24) ^ ARRSHFT2(Te1, s1, 16) ^
+             ARRSHFT2(Te2, s2, 8) ^ ARRSHFT2(Te3, s3, 0) ^ rk[4 * 1 + 0];
+        t1 = ARRSHFT2(Te0, s1, 24) ^ ARRSHFT2(Te1, s2, 16) ^
+             ARRSHFT2(Te2, s3, 8) ^ ARRSHFT2(Te3, s0, 0) ^ rk[4 * 1 + 1];
+        t2 = ARRSHFT2(Te0, s2, 24) ^ ARRSHFT2(Te1, s3, 16) ^
+             ARRSHFT2(Te2, s0, 8) ^ ARRSHFT2(Te3, s1, 0) ^ rk[4 * 1 + 2];
+        t3 = ARRSHFT2(Te0, s3, 24) ^ ARRSHFT2(Te1, s0, 16) ^
+             ARRSHFT2(Te2, s1, 8) ^ ARRSHFT2(Te3, s2, 0) ^ rk[4 * 1 + 3];
+        rk += 8;
+        if (--r == 0) {
+            break;
+        }
+        s0 = ARRSHFT2(Te0, t0, 24) ^ ARRSHFT2(Te1, t1, 16) ^
+             ARRSHFT2(Te2, t2, 8) ^ ARRSHFT2(Te3, t3, 0) ^ rk[4 * 0 + 0];
+        s1 = ARRSHFT2(Te0, t1, 24) ^ ARRSHFT2(Te1, t2, 16) ^
+             ARRSHFT2(Te2, t3, 8) ^ ARRSHFT2(Te3, t0, 0) ^ rk[4 * 0 + 1];
+        s2 = ARRSHFT2(Te0, t2, 24) ^ ARRSHFT2(Te1, t3, 16) ^
+             ARRSHFT2(Te2, t0, 8) ^ ARRSHFT2(Te3, t1, 0) ^ rk[4 * 0 + 2];
+        s3 = ARRSHFT2(Te0, t3, 24) ^ ARRSHFT2(Te1, t0, 16) ^
+             ARRSHFT2(Te2, t1, 8) ^ ARRSHFT2(Te3, t2, 0) ^ rk[4 * 0 + 3];
+    }
+
+    s0 = ARRSHFT(Te4, t0, 24, 24) ^ ARRSHFT(Te4, t1, 16, 16) ^ 
+         ARRSHFT(Te4, t2,  8,  8) ^ ARRSHFT(Te4, t3,  0,  0) ^ rk[0];
+    U32_TO_U8x4(ct,  0, s0);
+    s1 = ARRSHFT(Te4, t1, 24, 24) ^ ARRSHFT(Te4, t2, 16, 16) ^
+         ARRSHFT(Te4, t3,  8,  8) ^ ARRSHFT(Te4, t0,  0,  0) ^ rk[1];
+    U32_TO_U8x4(ct,  4, s1);
+    s2 = ARRSHFT(Te4, t2, 24, 24) ^ ARRSHFT(Te4, t3, 16, 16) ^
+         ARRSHFT(Te4, t0,  8,  8) ^ ARRSHFT(Te4, t1,  0,  0) ^ rk[2];
+    U32_TO_U8x4(ct,  8, s2);
+    s3 = ARRSHFT(Te4, t3, 24, 24) ^ ARRSHFT(Te4, t0, 16, 16) ^
+         ARRSHFT(Te4, t1,  8,  8) ^ ARRSHFT(Te4, t2,  0,  0) ^ rk[3];
+    U32_TO_U8x4(ct, 12, s3);
+}
 
 void rijndaelDecrypt(u32* rk, int Nr, u8* ct, u8* pt) {
     u32 s0;
@@ -435,16 +549,20 @@ void rijndaelDecrypt(u32* rk, int Nr, u8* ct, u8* pt) {
     u32 t3;
     int r = Nr >> 1;
 
-    t0 = (ct[0x0] << 0x18) ^ (ct[0x1] << 0x10) ^ (ct[0x2] << 0x08) ^ (ct[0x3] << 0x00) ^ rk[0];
-    t1 = (ct[0x4] << 0x18) ^ (ct[0x5] << 0x10) ^ (ct[0x6] << 0x08) ^ (ct[0x7] << 0x00) ^ rk[1];
-    t2 = (ct[0x8] << 0x18) ^ (ct[0x9] << 0x10) ^ (ct[0xA] << 0x08) ^ (ct[0xB] << 0x00) ^ rk[2];
-    t3 = (ct[0xC] << 0x18) ^ (ct[0xD] << 0x10) ^ (ct[0xE] << 0x08) ^ (ct[0xF] << 0x00) ^ rk[3];
+    t0 = U8x4_TO_U32(ct, 0x0) ^ rk[0];
+    t1 = U8x4_TO_U32(ct, 0x4) ^ rk[1];
+    t2 = U8x4_TO_U32(ct, 0x8) ^ rk[2];
+    t3 = U8x4_TO_U32(ct, 0xC) ^ rk[3];
 
     for (;;) {
-        s0 = Td0[t0 >> 0x18 & 0xFF] ^ Td1[t3 >> 0x10 & 0xFF] ^ Td2[t2 >> 0x08 & 0xFF] ^ Td3[t1 >> 0x00 & 0xFF] ^ rk[4];
-        s1 = Td0[t1 >> 0x18 & 0xFF] ^ Td1[t0 >> 0x10 & 0xFF] ^ Td2[t3 >> 0x08 & 0xFF] ^ Td3[t2 >> 0x00 & 0xFF] ^ rk[5];
-        s2 = Td0[t2 >> 0x18 & 0xFF] ^ Td1[t1 >> 0x10 & 0xFF] ^ Td2[t0 >> 0x08 & 0xFF] ^ Td3[t3 >> 0x00 & 0xFF] ^ rk[6];
-        s3 = Td0[t3 >> 0x18 & 0xFF] ^ Td1[t2 >> 0x10 & 0xFF] ^ Td2[t1 >> 0x08 & 0xFF] ^ Td3[t0 >> 0x00 & 0xFF] ^ rk[7];
+        s0 = ARRSHFT2(Td0, t0, 0x18) ^ ARRSHFT2(Td1, t3, 0x10) ^
+             ARRSHFT2(Td2, t2, 0x08) ^ ARRSHFT2(Td3, t1, 0x00) ^ rk[4];
+        s1 = ARRSHFT2(Td0, t1, 0x18) ^ ARRSHFT2(Td1, t0, 0x10) ^
+             ARRSHFT2(Td2, t3, 0x08) ^ ARRSHFT2(Td3, t2, 0x00) ^ rk[5];
+        s2 = ARRSHFT2(Td0, t2, 0x18) ^ ARRSHFT2(Td1, t1, 0x10) ^
+             ARRSHFT2(Td2, t0, 0x08) ^ ARRSHFT2(Td3, t3, 0x00) ^ rk[6];
+        s3 = ARRSHFT2(Td0, t3, 0x18) ^ ARRSHFT2(Td1, t2, 0x10) ^
+             ARRSHFT2(Td2, t1, 0x08) ^ ARRSHFT2(Td3, t0, 0x00) ^ rk[7];
 
         rk += 8;
 
@@ -453,41 +571,26 @@ void rijndaelDecrypt(u32* rk, int Nr, u8* ct, u8* pt) {
             break;
         }
 
-        t0 = Td0[s0 >> 0x18 & 0xFF] ^ Td1[s3 >> 0x10 & 0xFF] ^ Td2[s2 >> 0x08 & 0xFF] ^ Td3[s1 >> 0x00 & 0xFF] ^ rk[0];
-        t1 = Td0[s1 >> 0x18 & 0xFF] ^ Td1[s0 >> 0x10 & 0xFF] ^ Td2[s3 >> 0x08 & 0xFF] ^ Td3[s2 >> 0x00 & 0xFF] ^ rk[1];
-        t2 = Td0[s2 >> 0x18 & 0xFF] ^ Td1[s1 >> 0x10 & 0xFF] ^ Td2[s0 >> 0x08 & 0xFF] ^ Td3[s3 >> 0x00 & 0xFF] ^ rk[2];
-        t3 = Td0[s3 >> 0x18 & 0xFF] ^ Td1[s2 >> 0x10 & 0xFF] ^ Td2[s1 >> 0x08 & 0xFF] ^ Td3[s0 >> 0x00 & 0xFF] ^ rk[3];
+        t0 = ARRSHFT2(Td0, s0, 0x18) ^ ARRSHFT2(Td1, s3, 0x10) ^
+             ARRSHFT2(Td2, s2, 0x08) ^ ARRSHFT2(Td3, s1, 0x00) ^ rk[0];
+        t1 = ARRSHFT2(Td0, s1, 0x18) ^ ARRSHFT2(Td1, s0, 0x10) ^
+             ARRSHFT2(Td2, s3, 0x08) ^ ARRSHFT2(Td3, s2, 0x00) ^ rk[1];
+        t2 = ARRSHFT2(Td0, s2, 0x18) ^ ARRSHFT2(Td1, s1, 0x10) ^
+             ARRSHFT2(Td2, s0, 0x08) ^ ARRSHFT2(Td3, s3, 0x00) ^ rk[2];
+        t3 = ARRSHFT2(Td0, s3, 0x18) ^ ARRSHFT2(Td1, s2, 0x10) ^
+             ARRSHFT2(Td2, s1, 0x08) ^ ARRSHFT2(Td3, s0, 0x00) ^ rk[3];
     }
 
-    t0 = (Td4[s0 >> 0x18 & 0xFF] & 0xFF000000) ^ (Td4[s3 >> 0x10 & 0xFF] & 0x00FF0000) ^
-         (Td4[s2 >> 0x08 & 0xFF] & 0x0000FF00) ^ (Td4[s1 >> 0x00 & 0xFF] & 0x000000FF) ^ rk[0];
-
-    pt[0x0] = t0 >> 0x18;
-    pt[0x1] = t0 >> 0x10;
-    pt[0x2] = t0 >> 0x08;
-    pt[0x3] = t0 >> 0x00;
-
-    t1 = (Td4[s1 >> 0x18 & 0xFF] & 0xFF000000) ^ (Td4[s0 >> 0x10 & 0xFF] & 0x00FF0000) ^
-         (Td4[s3 >> 0x08 & 0xFF] & 0x0000FF00) ^ (Td4[s2 >> 0x00 & 0xFF] & 0x000000FF) ^ rk[1];
-
-    pt[0x4] = t1 >> 0x18;
-    pt[0x5] = t1 >> 0x10;
-    pt[0x6] = t1 >> 0x08;
-    pt[0x7] = t1 >> 0x00;
-
-    t2 = (Td4[s2 >> 0x18 & 0xFF] & 0xFF000000) ^ (Td4[s1 >> 0x10 & 0xFF] & 0x00FF0000) ^
-         (Td4[s0 >> 0x08 & 0xFF] & 0x0000FF00) ^ (Td4[s3 >> 0x00 & 0xFF] & 0x000000FF) ^ rk[2];
-
-    pt[0x8] = t2 >> 0x18;
-    pt[0x9] = t2 >> 0x10;
-    pt[0xA] = t2 >> 0x08;
-    pt[0xB] = t2 >> 0x00;
-
-    t3 = (Td4[s3 >> 0x18 & 0xFF] & 0xFF000000) ^ (Td4[s2 >> 0x10 & 0xFF] & 0x00FF0000) ^
-         (Td4[s1 >> 0x08 & 0xFF] & 0x0000FF00) ^ (Td4[s0 >> 0x00 & 0xFF] & 0x000000FF) ^ rk[3];
-
-    pt[0xC] = t3 >> 0x18;
-    pt[0xD] = t3 >> 0x10;
-    pt[0xE] = t3 >> 0x08;
-    pt[0xF] = t3 >> 0x00;
+    t0 = ARRSHFT(Td4, s0, 0x18, 24) ^ ARRSHFT(Td4, s3, 0x10, 16) ^
+         ARRSHFT(Td4, s2, 0x08,  8) ^ ARRSHFT(Td4, s1, 0x00,  0) ^ rk[0];
+    U32_TO_U8x4(pt, 0, t0);
+    t1 = ARRSHFT(Td4, s1, 0x18, 24) ^ ARRSHFT(Td4, s0, 0x10, 16) ^
+         ARRSHFT(Td4, s3, 0x08,  8) ^ ARRSHFT(Td4, s2, 0x00,  0) ^ rk[1];
+    U32_TO_U8x4(pt, 4, t1);
+    t2 = ARRSHFT(Td4, s2, 0x18, 24) ^ ARRSHFT(Td4, s1, 0x10, 16) ^
+         ARRSHFT(Td4, s0, 0x08,  8) ^ ARRSHFT(Td4, s3, 0x00,  0) ^ rk[2];
+    U32_TO_U8x4(pt, 8, t2);
+    t3 = ARRSHFT(Td4, s3, 0x18, 24) ^ ARRSHFT(Td4, s2, 0x10, 16) ^
+         ARRSHFT(Td4, s1, 0x08,  8) ^ ARRSHFT(Td4, s0, 0x00,  0) ^ rk[3];
+    U32_TO_U8x4(pt, 12, t3);
 }
