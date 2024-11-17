@@ -40,7 +40,7 @@ void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
     cur_proc_allowed_skc_bitmask = cmdHead->secureKernelRights;
 }
 
-s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey, const u32 certexponent,
+s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* publicKey, const u32 exponent,
                          RsaSize rsaSize, u32* certsign) {
     u8 digest[0x14];
     SHA1Context sha1ctx;
@@ -53,10 +53,10 @@ s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32*
         }
     }
     SHA1Result(&sha1ctx, digest);
-    return rsa_check_signature(digest, certpublickey, certexponent, rsaSize, certsign);
+    return rsa_check_signature(digest, publicKey, exponent, rsaSize, certsign);
 }
 
-s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexponent, RsaSize rsaSize, u32* certsign) {
+s32 rsa_check_signature(u8* digest, const u32* publicKey, const u32 exponent, RsaSize rsaSize, u32* certsign) {
     char result[512];
     s32 rsaBits;
     u32 rsaBytes;
@@ -71,7 +71,7 @@ s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexpo
         return -1;
     }
 
-    bsl_rsa_verify(result, certsign, certpublickey, &certexponent, rsaBits);
+    bsl_rsa_verify(result, certsign, publicKey, &exponent, rsaBits);
 
     rsaBytes -= 0x14;
     if (memcmp(digest, &result[rsaBytes], 0x14) == 0) {

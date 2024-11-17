@@ -436,7 +436,8 @@ s32 skVerifyHash(BbShaHash* hash, u32* signature, BbCertBase** certChain, BbAppL
             return -1;
         }
 
-        if (verify_all_crlbundles(&crls->carl, D_9FC0F308.caCrlVersion, &crls->cprl, D_9FC0F308.cpCrlVersion,
+        if (verify_all_crlbundles(&crls->carl, D_9FC0F308.caCrlVersion, // force formatting
+                                  &crls->cprl, D_9FC0F308.cpCrlVersion, //
                                   &crls->tsrl, D_9FC0F308.tsCrlVersion)) {
             return -1;
         }
@@ -494,7 +495,7 @@ s32 skGetConsumption(u16* tidWindow, u16* cc) {
     return 0;
 }
 
-void skAdvanceTicketWindow(void) {
+s32 skAdvanceTicketWindow(void) {
     s32 i;
 
     for (i = 0; i < ARRAY_COUNT(D_9FC0F308.cc) - 1; i++) {
@@ -502,7 +503,7 @@ void skAdvanceTicketWindow(void) {
     }
     D_9FC0F308.cc[i] = 0;
     D_9FC0F308.tidWindow++;
-    write_virage01_data(&D_9FC0F308);
+    return write_virage01_data(&D_9FC0F308);
 }
 
 s32 skSetLimit(u16 limit, u16 code) {

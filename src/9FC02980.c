@@ -161,7 +161,8 @@ s32 verify_crlbundle(BbCrlBundle* bundle, u32 type, u32 requiredVersion) {
     return ret;
 }
 
-s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion, BbCrlBundle* cprl, s32 requiredCprlVersion,
+s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion, // force formatting
+                          BbCrlBundle* cprl, s32 requiredCprlVersion, //
                           BbCrlBundle* tsrl, s32 requiredTsrlVersion) {
     u32 i;
 
@@ -201,9 +202,9 @@ s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrl
         return -1;
     }
 
-    ret = verify_all_crlbundles(&crls->carl, ticketBundle->ticket->cmd.head.caCrlVersion, &crls->cprl,
-                                ticketBundle->ticket->cmd.head.cpCrlVersion, &crls->tsrl,
-                                ticketBundle->ticket->head.tsCrlVersion);
+    ret = verify_all_crlbundles(&crls->carl, ticketBundle->ticket->cmd.head.caCrlVersion, // force formatting
+                                &crls->cprl, ticketBundle->ticket->cmd.head.cpCrlVersion, //
+                                &crls->tsrl, ticketBundle->ticket->head.tsCrlVersion);
     if (ret != 0) {
         return ret;
     }
@@ -276,8 +277,9 @@ s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBa
         }
     }
 
-    ret = verify_all_crlbundles(&appLaunchCrls->carl, cmdHead->caCrlVersion, &appLaunchCrls->cprl,
-                                cmdHead->cpCrlVersion, &appLaunchCrls->tsrl, -1);
+    ret = verify_all_crlbundles(&appLaunchCrls->carl, cmdHead->caCrlVersion, // force formatting
+                                &appLaunchCrls->cprl, cmdHead->cpCrlVersion, //
+                                &appLaunchCrls->tsrl, -1);
     if (ret != 0) {
         return ret;
     }

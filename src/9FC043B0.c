@@ -54,7 +54,7 @@ void recrypt_list_add_entry(RecryptListEntry* entry, RecryptList* list, u32 entr
 s32 recrypt_list_get_entry_for_cid(RecryptList* list, BbContentId contentId, RecryptListEntry* entry) {
     u32 i;
 
-    for (i = 0; i < (u32)list->numEntries; i++) {
+    for (i = 0; i < list->numEntries; i++) {
         recrypt_list_decrypt_entry(entry, list, i);
         if (entry->contentId == contentId) {
             return i;
@@ -65,7 +65,7 @@ s32 recrypt_list_get_entry_for_cid(RecryptList* list, BbContentId contentId, Rec
 }
 
 s32 recrypt_list_verify_size_and_sig(RecryptList* list) {
-    if ((s32)(list->numEntries * sizeof(RecryptListEntry) + 0x44) < 0x4000) { // TODO: offsetof?
+    if ((s32)(list->numEntries * sizeof(RecryptListEntry) + offsetof(RecryptList, entries)) < 0x4000) {
         return recrypt_list_verify_ecc_sig(list);
     }
 

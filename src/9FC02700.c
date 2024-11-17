@@ -25,7 +25,7 @@ s32 cert_get_signature_size(BbCertBase* certBase) {
     }
 }
 
-s32 cert_get_signature(BbCertBase* certBase, void** out) { // TODO: rename cert_get_signature
+s32 cert_get_signature(BbCertBase* certBase, void** out) {
     switch (certBase->certType) {
         case 0:
             *out = &((BbEccCert*)certBase)->signature;
@@ -55,13 +55,13 @@ s32 verify_cert_signature(BbCertBase* toVerify, BbRsaCert* toVeryifyAgainst) {
     cert_get_signature(toVerify, &signature);
     dataBlock.data = toVerify;
     dataBlock.size = certSize - certSignatureSize;
-    if ((strcmp((const char*)toVerify->issuer, "Root") != 0) && (toVeryifyAgainst == NULL)) {
+    if (strcmp((const char*)toVerify->issuer, "Root") != 0 && toVeryifyAgainst == NULL) {
         return -1;
     }
 
     if (strcmp((const char*)toVerify->issuer, "Root") == 0) {
         return rsa_verify_signature(&dataBlock, 1, rootRSAPublicKey, rootRSAExponent, 1, signature);
-    } else if ((u32)toVerify->sigType < 2u) {
+    } else if (toVerify->sigType == RSA_2048 || toVerify->sigType == RSA_4096) {
         return rsa_verify_signature(&dataBlock, 1, toVeryifyAgainst->publicKey, toVeryifyAgainst->exponent,
                                     toVerify->sigType, signature);
     }
@@ -92,6 +92,6 @@ s32 verify_cert_chain(BbCertBase** certChain, s32 serverType) {
         }
     }
 
-    // BUG! Return success without verifying root cert if more than 5 non-root certs are provided.
+    //! @bug Return success without verifying root cert if more than 5 non-root certs are provided.
     return 0;
 }

@@ -250,9 +250,9 @@ void* wordcopy(void* dst, void* src, s32 nWords);
 s32 func_9FC047CC(u8* a0, s32 a1);
 void initialize_virage_controllers(void);
 s32 func_9FC035EC(u32* randomOut, s32 nWords);
-s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey, const u32 certexponent,
+s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* publicKey, const u32 exponent,
                          RsaSize rsaSize, u32* certsign);
-s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexponent, RsaSize rsaSize, u32* certsign);
+s32 rsa_check_signature(u8* digest, const u32* publicKey, const u32 exponent, RsaSize rsaSize, u32* certsign);
 
 extern const u32 rootRSAPublicKey[];
 extern const u32 rootRSAExponent;
