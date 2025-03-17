@@ -133,7 +133,7 @@ s32 skGetId(BbId* id) {
  *     -4 if verification of cprl failed
  *     -9 if any certificates in cprl or tsrl or the ticket bundle were revoked
  */
-s32 verify_ticket_bundle_against_crls(BbTicketBundle* bundle, BbAppLaunchCrls* crls, RecryptList* recryptList, s32 recrypt) {
+s32 verify_ticket_bundle_against_crls(BbTicketBundle* bundle, BbAppLaunchCrls* crls, BbRecryptList* recryptList, s32 recrypt) {
     s32 ret;
 
     // Check if the ticket bundle has valid pointers
@@ -179,7 +179,7 @@ s32 verify_ticket_bundle_against_crls(BbTicketBundle* bundle, BbAppLaunchCrls* c
  *     -4 if verification of cprl failed
  *     -9 if any certificates in cprl or tsrl or the ticket bundle were revoked
  */
-s32 skLaunchSetup(BbTicketBundle* bundle, BbAppLaunchCrls* crls, RecryptList* recryptList) {
+s32 skLaunchSetup(BbTicketBundle* bundle, BbAppLaunchCrls* crls, BbRecryptList* recryptList) {
     BbAesKey recryptKey;
     BbTicketHead* head;
     u32 ret;
@@ -308,7 +308,7 @@ s32 skLaunch(void* app_entrypoint) {
     return -1;
 }
 
-s32 skRecryptListValid(RecryptList* recryptList) {
+s32 skRecryptListValid(BbRecryptList* recryptList) {
     if (!CHECK_UNTRUSTED_RECRYPT_LIST(recryptList)) {
         return -1;
     }
@@ -316,7 +316,7 @@ s32 skRecryptListValid(RecryptList* recryptList) {
     return recrypt_list_verify_size_and_sig(recryptList);
 }
 
-s32 skRecryptBegin(BbTicketBundle* bundle, BbAppLaunchCrls* crls, RecryptList* recryptList) {
+s32 skRecryptBegin(BbTicketBundle* bundle, BbAppLaunchCrls* crls, BbRecryptList* recryptList) {
     BbAesKey recryptKey;
     BbTicketHead* head = &bundle->ticket->head;
     s32 ret;
@@ -429,7 +429,7 @@ s32 skRecryptComputeState(u8* buf, u32 size) {
     return 0;
 }
 
-s32 skRecryptEnd(RecryptList* recryptList) {
+s32 skRecryptEnd(BbRecryptList* recryptList) {
     BbShaHash digest;
 
     if (!CHECK_UNTRUSTED_RECRYPT_LIST(recryptList)) {

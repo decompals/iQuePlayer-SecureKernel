@@ -1,4 +1,3 @@
-#include "include_asm.h"
 #include "libcrypto/poly_math.h"
 #include "libcrypto/elliptic_math.h"
 #include "macros.h"

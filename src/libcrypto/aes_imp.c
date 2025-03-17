@@ -1,4 +1,3 @@
-#include "include_asm.h"
 #include "ultratypes.h"
 #include "libcrypto/aes.h"
 

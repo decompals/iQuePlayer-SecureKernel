@@ -12,7 +12,7 @@
  *     -1 If the signature failed to verify over the data.
  *      0 If the signature was successfully verified.
  */
-s32 recrypt_list_verify_ecc_sig(RecryptList* list) {
+s32 recrypt_list_verify_ecc_sig(BbRecryptList* list) {
     BbEccPublicKey publicKey;
     u32 size = sizeof(list->numEntries) + list->numEntries * sizeof(RecryptListEntry);
 
@@ -28,7 +28,7 @@ s32 recrypt_list_verify_ecc_sig(RecryptList* list) {
  *
  * @param list The recrypt list to sign.
  */
-void recrypt_list_sign(RecryptList* list) {
+void recrypt_list_sign(BbRecryptList* list) {
     ecc_sign_data((u8*)&list->numEntries, sizeof(list->numEntries) + list->numEntries * sizeof(RecryptListEntry),
                   virage2_offset->privateKey, &list->signature, RECRYPT_LIST_IDENTITY);
 }
@@ -38,7 +38,7 @@ void recrypt_list_sign(RecryptList* list) {
  *
  * @param list Recrypt list to reset.
  */
-s32 recrypt_list_clear(RecryptList* list) {
+s32 recrypt_list_clear(BbRecryptList* list) {
     list->numEntries = 0;
     recrypt_list_sign(list);
     return 0;
@@ -51,7 +51,7 @@ s32 recrypt_list_clear(RecryptList* list) {
  * @param list  The recrypt list to read from.
  * @param index The index of the entry to fetch.
  */
-void recrypt_list_decrypt_entry(RecryptListEntry* entry, RecryptList* list, u32 index) {
+void recrypt_list_decrypt_entry(RecryptListEntry* entry, BbRecryptList* list, u32 index) {
     BbAesIv recryptListEntryIV;
     u32 i;
 
@@ -73,7 +73,7 @@ void recrypt_list_decrypt_entry(RecryptListEntry* entry, RecryptList* list, u32 
  * @param list  The recrypt list to add the entry to.
  * @param index The index to replace with the new entry.
  */
-void recrypt_list_add_entry(RecryptListEntry* entry, RecryptList* list, u32 index) {
+void recrypt_list_add_entry(RecryptListEntry* entry, BbRecryptList* list, u32 index) {
     u8 encryptedRecryptListEntry[sizeof(RecryptListEntry)];
     BbAesIv recryptListEntryIV;
     u32 i;
@@ -99,7 +99,7 @@ void recrypt_list_add_entry(RecryptListEntry* entry, RecryptList* list, u32 inde
  *     -1 If no entry was found for the provided CID.
  *   >= 0 The index of the entry that was found.
  */
-s32 recrypt_list_get_entry_for_cid(RecryptList* list, BbContentId contentId, RecryptListEntry* entry) {
+s32 recrypt_list_get_entry_for_cid(BbRecryptList* list, BbContentId contentId, RecryptListEntry* entry) {
     u32 i;
 
     for (i = 0; i < list->numEntries; i++) {
@@ -120,8 +120,8 @@ s32 recrypt_list_get_entry_for_cid(RecryptList* list, BbContentId contentId, Rec
  *     -1 If the recrypt list is too big or the signature failed to verify.
  *      0 If the recrypt list is valid.
  */
-s32 recrypt_list_verify_size_and_sig(RecryptList* list) {
-    if ((s32)(offsetof(RecryptList, entries) + list->numEntries * sizeof(RecryptListEntry)) < RECRYPT_LIST_MAX_SIZE) {
+s32 recrypt_list_verify_size_and_sig(BbRecryptList* list) {
+    if ((s32)(offsetof(BbRecryptList, entries) + list->numEntries * sizeof(RecryptListEntry)) < RECRYPT_LIST_MAX_SIZE) {
     	return recrypt_list_verify_ecc_sig(list);
     }
     return -1;
@@ -134,7 +134,7 @@ s32 recrypt_list_verify_size_and_sig(RecryptList* list) {
  * @param contentId     A
  * @param recryptStatus A
  */
-s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, RecryptStatus recryptStatus) {
+s32 recrypt_list_add_new_entry(BbRecryptList* list, BbContentId contentId, RecryptStatus recryptStatus) {
     RecryptListEntry entry;
     s32 index;
 
@@ -163,7 +163,7 @@ s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, Recrypt
  *
  * @return A
  */
-RecryptStatus recrypt_list_get_key_for_cid(RecryptList* list, BbAesKey* key, BbContentId contentId) {
+RecryptStatus recrypt_list_get_key_for_cid(BbRecryptList* list, BbAesKey* key, BbContentId contentId) {
     RecryptListEntry entry;
     RecryptStatus recryptStatus;
 

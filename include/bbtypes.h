@@ -2,8 +2,8 @@
 #define BBTYPES_H
 
 #include "PR/ultratypes.h"
+#include "PR/bbskapi.h"
 
-typedef u32 BbId;
 typedef u32 BbContentId;
 typedef u32 BbAesKey[4];
 typedef u32 BbAesIv[4];
@@ -14,12 +14,9 @@ typedef u32 BbRsaPublicKey4096[128];
 typedef u32 BbRsaExponent;
 typedef u32 BbRsaSig2048[64];
 typedef u32 BbRsaSig4096[128];
-typedef u32 BbEccSig[16];
 typedef u32 BbOwnerId;
 typedef u32 BbRandomMix[8];
 typedef u16 BbTicketId;
-
-typedef u32 BbShaHash[5];
 
 typedef u8 BbName[64];
 typedef u8 BbServerName[64];
@@ -27,7 +24,7 @@ typedef u8 BbServerSuffix[64];
 
 typedef u8 BbContentDesc[0x2800];
 
-typedef struct {
+typedef struct BbVirage01 {
     /* 0x00 */ u8 tsCrlVersion;
     /* 0x01 */ u8 caCrlVersion;
     /* 0x02 */ u8 cpCrlVersion;
@@ -40,7 +37,7 @@ typedef struct {
 } BbVirage01; // size = 0x40
 #define VIRAGE01_EXPECTED_CHECKSUM 0x7ADC
 
-typedef struct {
+typedef struct BbVirage2 {
     /* 0x00 */ BbShaHash skHash;
     /* 0x14 */ u32 romPatch[16];
     /* 0x54 */ BbEccPublicKey publicKey;
@@ -54,30 +51,30 @@ typedef struct {
     /* 0xFC */ u32 jtagEnable;
 } BbVirage2; // size = 0x100
 
-typedef enum {
+typedef enum BbCertType {
     CERT_TYPE_ECDSA = 0,
     CERT_TYPE_RSA = 1
 } BbCertType;
 
-typedef enum {
+typedef enum BbCrlType {
     CRL_TYPE_TS = 0,
     CRL_TYPE_CP = 1,
     CRL_TYPE_CA = 2
 } BbCrlType;
 
-typedef enum {
+typedef enum BbServerType {
     SERVER_TYPE_CA = 0,
     SERVER_TYPE_TS = 1,
     SERVER_TYPE_CP = 2
 } BbServerType;
 
-typedef enum {
+typedef enum BbSigType {
     SIGTYPE_RSA2048 = 0,
     SIGTYPE_RSA4096 = 1,
     SIGTYPE_ECDSA = 2
 } BbSigType;
 
-typedef struct {
+typedef struct BbCertBase {
     /* 0x00 */ u32 certType; // BbCertType
     /* 0x04 */ u32 sigType; // BbSigType
     /* 0x08 */ u32 date;
@@ -86,28 +83,28 @@ typedef struct {
     /*      */     BbServerSuffix server;
     /*      */     BbName bbid;
     /*      */ } name;
-} BbCertId, BbCertBase; // size = 0x8C
+} BbCertBase, BbCertId; // size = 0x8C
 
-typedef union {
+typedef union BbGenericSig {
     BbRsaSig2048 rsa2048;
     BbRsaSig4096 rsa4096;
     BbEccSig ecc;
 } BbGenericSig; // size = 0x200
 
-typedef struct {
+typedef struct BbEccCert {
     /* 0x00 */ BbCertBase certId;
     /* 0x8C */ u32 publicKey[16];
     /* 0xCC */ BbGenericSig signature;
 } BbEccCert; // size = 0x2CC
 
-typedef struct {
+typedef struct BbRsaCert {
     /* 0x000 */ BbCertBase certId;
     /* 0x08C */ BbRsaPublicKey2048 publicKey;
     /* 0x18C */ BbRsaExponent exponent;
     /* 0x190 */ BbGenericSig signature;
 } BbRsaCert; // size = 0x390
 
-typedef struct {
+typedef struct BbContentMetaDataHead {
     /* 0x00 */ u32  unusedPadding;
     /* 0x04 */ u32  caCrlVersion;
     /* 0x08 */ u32  cpCrlVersion;
@@ -128,12 +125,12 @@ typedef struct {
 
 #define CMD_EXEC_FLAG_RECRYPT (1 << 1)
 
-typedef struct {
+typedef struct BbContentMetaData {
     /* 0x0000 */ BbContentDesc contentDesc;
     /* 0x2800 */ BbContentMetaDataHead head;
 } BbContentMetaData; // size = 0x29AC
 
-typedef struct {
+typedef struct BbTicketHead {
     /* 0x00 */ BbId bbId;
     /* 0x04 */ BbTicketId tid;
     /* 0x06 */ u16 code;
@@ -146,26 +143,26 @@ typedef struct {
     /* 0xA0 */ BbRsaSig2048 ticketSign;
 } BbTicketHead; // size = 0x1A0
 
-typedef struct {
+typedef struct BbTicket {
     /* 0x0000 */ BbContentMetaData cmd;
     /* 0x29AC */ BbTicketHead head;
 } BbTicket; // size = 0x2B4C
 
 #define MAX_CERTS 5
 
-typedef struct {
+typedef struct BbTicketBundle {
     /* 0x00 */ BbTicket* ticket;
     /* 0x04 */ BbCertBase* ticketChain[MAX_CERTS];
     /* 0x18 */ BbCertBase* cmdChain[MAX_CERTS];
 } BbTicketBundle; // size = 0x2C
 
-typedef enum {
+typedef enum BbCrlUnusedEnumType {
     CRL_UNUSED0 = 0,
     CRL_UNUSED1 = 1,
     CRL_UNUSED2 = 2
 } BbCrlUnusedEnumType;
 
-typedef struct {
+typedef struct BbCrlHead {
     /* 0x0000 */ BbGenericSig signature;
     /* 0x0200 */ u32 type; // BbCrlType
     /* 0x0204 */ u32 sigType; // BbSigType
@@ -176,41 +173,41 @@ typedef struct {
     /* 0x0254 */ u32 numberRevoked;
 } BbCrlHead; // size = 0x258
 
-typedef struct {
+typedef struct BbCrlBundle {
     /* 0x0000 */ BbCrlHead* head;
     /* 0x0004 */ BbServerSuffix* list;
     /* 0x0008 */ BbCertBase* certChain[MAX_CERTS];
 } BbCrlBundle; // size = 0x1C
 
-typedef struct {
+typedef struct BbAppLaunchCrls {
     /* 0x0000 */ BbCrlBundle tsrl;
     /* 0x001C */ BbCrlBundle carl;
     /* 0x0038 */ BbCrlBundle cprl;
 } BbAppLaunchCrls; // size = 0x54
 
-typedef struct {
+typedef struct RSADataBlock {
     /* 0x00 */ void* data;
     /* 0x04 */ u32 size;
 } RSADataBlock; // size = 8
 
-typedef enum {
+typedef enum RecryptStatus {
     RECRYPT_STATUS_COMPLETE  = 2,
     RECRYPT_STATUS_PARTIAL   = 3,
     RECRYPT_STATUS_BEGINNING = 4
 } RecryptStatus;
 
-typedef struct {
+typedef struct RecryptListEntry {
     /* 0x00 */ BbContentId contentId;
     /* 0x04 */ BbAesKey contentKey;
     /* 0x14 */ RecryptStatus recryptStatus;
     /* 0x18 */ char unk18[8];
 } RecryptListEntry;
 
-typedef struct {
+typedef struct BbRecryptList {
     /* 0x00 */ BbEccSig signature;
     /* 0x40 */ u32 numEntries;
     /* 0x44 */ RecryptListEntry entries[1/*numEntries*/];
-} RecryptList;
+} BbRecryptList;
 
 #define RECRYPT_LIST_IDENTITY 0x06091968
 
@@ -245,11 +242,11 @@ u16* getTrialConsumptionByTid(u16 tid);
 s32 verify_cert_chain(BbCertBase** certChain, BbServerType serverType);
 s32 check_cert_ranges(BbCertBase**);
 s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrls* crls);
-RecryptStatus recrypt_list_get_key_for_cid(RecryptList* list, BbAesKey* key, BbContentId contentId);
+RecryptStatus recrypt_list_get_key_for_cid(BbRecryptList* list, BbAesKey* key, BbContentId contentId);
 void aes_cbc_set_key_iv(BbAesKey* key, BbAesIv* iv);
 void set_proc_permissions(BbContentMetaDataHead* cmdHead);
-s32 recrypt_list_verify_size_and_sig(RecryptList* list);
-s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, RecryptStatus recryptStatus);
+s32 recrypt_list_verify_size_and_sig(BbRecryptList* list);
+s32 recrypt_list_add_new_entry(BbRecryptList* list, BbContentId contentId, RecryptStatus recryptStatus);
 s32 pi_buffer_dma(s32 bufSelect, void* outBuf, s32 length, s32 direction);
 void AES_Run(s32 bufSelect, s32 continuation);
 void ecc_sign_data(u8* data, u32 datasize, u32* private_key, BbEccSig* signature, u32 identity);
@@ -277,7 +274,7 @@ s32 rsa_verify_signature(RSADataBlock* dataBlocks, s32 numDataBlocks, const u32*
                          BbSigType rsaSigType, u32* certsign);
 s32 rsa_check_signature(BbShaHash* digest, const u32* certpublickey, const u32 certexponent, BbSigType rsaSigType, u32* certsign);
 
-typedef enum {
+typedef enum AppTrialType {
     TRIAL_TYPE_0, // Timed
     TRIAL_TYPE_1, // Number of launches
     TRIAL_TYPE_2, // Timed

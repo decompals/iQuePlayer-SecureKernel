@@ -1,4 +1,3 @@
-#include "include_asm.h"
 #include "libcrypto/bb_nn.h"
 #include "libcrypto/poly_math.h"
 #include "libcrypto/bsl.h"

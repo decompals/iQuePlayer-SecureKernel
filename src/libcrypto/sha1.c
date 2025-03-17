@@ -1,4 +1,3 @@
-#include "include_asm.h"
 #include "string.h"
 #include "libcrypto/sha1.h"
 #include "macros.h"
