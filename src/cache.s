@@ -20,10 +20,11 @@ LEAF(icache_reset)
      addiu  t0, t0, ICACHE_LINESIZE
 .set reorder
     jr      ra
-END(icache_reset)
+
 .if . - icache_reset > 2*ICACHE_LINESIZE
   .error "icache_reset is expected to fit in two icache lines"
 .endif
+END(icache_reset)
 
 LEAF(dcache_reset)
     // invalidates the cache in the bootrom address space
@@ -63,15 +64,15 @@ END(dcache_reset)
 
 LEAF(wipe_sk_stack)
     // clear the stack
-    la      t0, 0x9FC40000
-    la      t1, 0x9FC48000 - 0x138
+    la      t0, PHYS_TO_K0(0x1FC40000)
+    la      t1, PHYS_TO_K0(0x1FC48000) - 0x138
 1:
     sd      zero, (t0)
     addiu   t0, 8
     bltu    t0, t1, 1b
 
     // write back the cache
-    la      t0, 0x9FC40000
+    la      t0, PHYS_TO_K0(0x1FC40000)
     addiu   t1, t0, DCACHE_SIZE
 2:
     cache   (CACH_PD | C_IWBINV), (t0)
@@ -81,6 +82,6 @@ LEAF(wipe_sk_stack)
     jr      ra
 END(wipe_sk_stack)
 
-LEAF(func_9FC00A7C)
+LEAF(exception_handler)
     jr      ra
-END(func_9FC00A7C)
+END(exception_handler)

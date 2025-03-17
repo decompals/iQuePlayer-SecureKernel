@@ -4,22 +4,22 @@
 void delay(s32 n) {
     s32 i;
 
-    for(i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
 #ifdef NON_MATCHING
         __asm__ volatile ("")
 #endif
         ;
 }
 
-void initialize_virage_controller(u32 ctrlReg) {
-    u32 baseAddr = ctrlReg & 0xFFFF0000;
+void initialize_virage_controller(u32 statusReg) {
+    u32 baseReg = statusReg & 0xFFFF0000;
 
-    IO_WRITE(baseAddr + 0x8000, 0x8A);
-    IO_WRITE(baseAddr + 0x8004, 0x13);
-    IO_WRITE(baseAddr + 0x8008, 0x80);
-    IO_WRITE(baseAddr + 0x800C, 0x92);
-    IO_WRITE(baseAddr + 0x8010, 0x18);
-    IO_WRITE(baseAddr + 0x8014, 5);
+    IO_WRITE(baseReg + 0x8000, 0x8A);
+    IO_WRITE(baseReg + 0x8004, 0x13);
+    IO_WRITE(baseReg + 0x8008, 0x80);
+    IO_WRITE(baseReg + 0x800C, 0x92);
+    IO_WRITE(baseReg + 0x8010, 0x18);
+    IO_WRITE(baseReg + 0x8014, 0x05);
 }
 
 void initialize_virage_controllers(void) {
@@ -29,61 +29,80 @@ void initialize_virage_controllers(void) {
     initialize_virage_controller(VIRAGE2_STATUS_REG);
 }
 
-s32 write_virage_data(u32 controller, u32 *data, s32 size) {
-    s32 temp_lo;
-    s32 temp_s1;
-    u32 temp_s4;
+/**
+ * Writes new data into Virage memory, storing to the backing flash memory.
+ * Performs error checking but little recovery.
+ *
+ * @return
+ *     -1 If error for any reason
+ *      0 If success
+ */
+s32 write_virage_data(u32 statusReg, u32 *data, s32 size) {
+    s32 wait;
+    s32 div;
+    u32 baseReg = statusReg & 0xFFFF0000;
     s32 i;
-    u32 temp;
+    u32 status;
 
-    temp_s4 = controller & 0xFFFF0000;
-    temp_s1 = func_9FC04220();
-    IO_WRITE(controller, 0);
-    IO_WRITE(MI_1C_REG, (1000 / temp_s1) + 1);
-    delay(640000 / temp_s1);
-    temp = IO_READ(controller);
-    if (temp & 1) {
-        temp_lo = 20000 / temp_s1;
-        delay(temp_lo);
-        delay(temp_lo);
-        temp = IO_READ(controller);
-        if (temp & 1) {
+    div = get_clock_divider();
+
+    // Reset something?
+    IO_WRITE(statusReg, 0);
+    // Wait for something?
+    IO_WRITE(MI_1C_REG, (1000 / div) + 1);
+    delay(640000 / div);
+    // Bit 0 should be unset
+    status = IO_READ(statusReg);
+    if (status & VIRAGEx_STATUS_00000001) {
+        // If it's set, wait more
+        wait = 20000 / div;
+        delay(wait);
+        delay(wait);
+        // If it's still set, fail
+        status = IO_READ(statusReg);
+        if (status & VIRAGEx_STATUS_00000001) {
             return -1;
         }
     }
 
-    temp = IO_READ(controller);
-    if (!(temp & 0x40000000)) {
+    // Bit 30 better be set
+    status = IO_READ(statusReg);
+    if (!(status & VIRAGEx_STATUS_40000000)) {
         return -1;
     }
 
-    for(i = 0; i < size; i++) {
-        IO_WRITE(temp_s4 + (i * 4), data[i]);
-        temp = IO_READ(temp_s4 + (i * 4));
-        if (temp != data[i]) {
+    // Write some data into SRAM
+    for (i = 0; i < size; i++) {
+        IO_WRITE(baseReg + i * 4, data[i]);
+        status = IO_READ(baseReg + i * 4);
+        if (status != data[i]) {
             return -1;
         }
     }
 
-    if (func_9FC04304(controller) != 0) {
+    // Store SRAM to Flash
+    if (virage_store_sram(statusReg) != 0) {
         return -1;
     }
 
-    for(i = 0; i < size; i++) {
-        IO_WRITE(temp_s4 + (i * 4), 0);
-        temp = IO_READ(temp_s4 + (i * 4));
-        if(temp != 0) {
+    // Write all 0s into SRAM
+    for (i = 0; i < size; i++) {
+        IO_WRITE(baseReg + i * 4, 0);
+        status = IO_READ(baseReg + i * 4);
+        if (status != 0) {
             return -1;
         }
     }
 
-    if (func_9FC0425C(controller) != 0) {
+    // Reload Flash to SRAM
+    if (virage_load_flash(statusReg) != 0) {
         return -1;
     }
 
-    for(i = 0; i < size; i++) {
-        temp = IO_READ(temp_s4 + (i * 4));
-        if(temp != data[i]) {
+    // Compare results
+    for (i = 0; i < size; i++) {
+        status = IO_READ(baseReg + i * 4);
+        if (status != data[i]) {
             return -1;
         }
     }
@@ -91,49 +110,70 @@ s32 write_virage_data(u32 controller, u32 *data, s32 size) {
     return 0;
 }
 
-s32 func_9FC04220(void) {
-    u32 temp = (IO_READ(PI_MISC_REG) >> 25) & 3;
+s32 get_clock_divider(void) {
+    u32 clockId = PI_GPIO_GET_CLOCK(IO_READ(PI_GPIO_REG));
 
-    if(temp == 0) {
+    if (clockId == 0) {
         return 16;
-    } else if(temp == 1) {
+    } else if (clockId == 1) {
         return 12;
     } else {
        return 10;
     }
 }
 
-s32 func_9FC0425C(u32 controller) {
-    u32 temp = controller | 0x2000;
+/**
+ * Loads Virage Flash to SRAM
+ *
+ * @return
+ *     -1 If error
+ *      0 If success
+ */
+s32 virage_load_flash(u32 statusReg) {
+    u32 controlReg = statusReg | 0x2000;
     s32 baseDelay;
 
-    baseDelay = 44018 / func_9FC04220();
-    IO_WRITE(temp, 0x03000000);
+    baseDelay = 44018 / get_clock_divider();
+    // Load flash -> sram
+    IO_WRITE(controlReg, VIRAGEx_CMD_LOAD_FLASH);
+    // Wait
     delay(baseDelay + 100);
     delay(baseDelay + 400);
-    if (!(IO_READ(controller) & 0x40000000)) {
+    // If bit is unset following the delay, it failed?
+    if (!(IO_READ(statusReg) & VIRAGEx_STATUS_40000000)) {
         return -1;
     }
     return 0;
 }
 
-s32 func_9FC04304(u32 controller) {
-    u32 temp2 = (u32)controller;
-    u32 temp = (u32)controller | 0x2000;
-    s32 var_v1;
+/**
+ * Stores Virage SRAM to Flash
+ *
+ * @return
+ *     -1 If error
+ *      0 If success
+ */
+s32 virage_store_sram(u32 statusReg) {
+    u32 commandReg = statusReg | 0x2000;
+    s32 status;
 
-    IO_WRITE(temp, 0x02000000);
+    // Start a store of SRAM -> Flash
+    IO_WRITE(commandReg, VIRAGEx_CMD_STORE_SRAM);
+    // Wait
     delay(100);
-    var_v1 = IO_READ(temp2);
-    if (var_v1 & 0x40000000) {
+    // Bit 30 must NOT be set yet
+    status = IO_READ(statusReg);
+    if (status & VIRAGEx_STATUS_40000000) {
         return -1;
     }
 
-    for(var_v1 = IO_READ(temp2); !(var_v1 & 0x40000000); var_v1 = IO_READ(temp2)) {
+    // Wait for bit 30 to be set
+    for (status = IO_READ(statusReg); !(status & VIRAGEx_STATUS_40000000); status = IO_READ(statusReg)) {
         delay(100);
     }
 
-    if (!(var_v1 & 0x20000000)) {
+    // If bit 29 isn't set, fail
+    if (!(status & VIRAGEx_STATUS_20000000)) {
         return -1;
     }
     return 0;

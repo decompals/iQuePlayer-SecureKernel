@@ -38,6 +38,7 @@ typedef struct {
     /* 0x3C */ u16 seq;
     /* 0x3E */ u16 sum;
 } BbVirage01; // size = 0x40
+#define VIRAGE01_EXPECTED_CHECKSUM 0x7ADC
 
 typedef struct {
     /* 0x00 */ BbShaHash skHash;
@@ -53,9 +54,32 @@ typedef struct {
     /* 0xFC */ u32 jtagEnable;
 } BbVirage2; // size = 0x100
 
+typedef enum {
+    CERT_TYPE_ECDSA = 0,
+    CERT_TYPE_RSA = 1
+} BbCertType;
+
+typedef enum {
+    CRL_TYPE_TS = 0,
+    CRL_TYPE_CP = 1,
+    CRL_TYPE_CA = 2
+} BbCrlType;
+
+typedef enum {
+    SERVER_TYPE_CA = 0,
+    SERVER_TYPE_TS = 1,
+    SERVER_TYPE_CP = 2
+} BbServerType;
+
+typedef enum {
+    SIGTYPE_RSA2048 = 0,
+    SIGTYPE_RSA4096 = 1,
+    SIGTYPE_ECDSA = 2
+} BbSigType;
+
 typedef struct {
-    /* 0x00 */ u32 certType;
-    /* 0x04 */ u32 sigType;
+    /* 0x00 */ u32 certType; // BbCertType
+    /* 0x04 */ u32 sigType; // BbSigType
     /* 0x08 */ u32 date;
     /* 0x0C */ BbServerName issuer;
     /* 0x4C */ union {
@@ -71,13 +95,13 @@ typedef union {
 } BbGenericSig; // size = 0x200
 
 typedef struct {
-    /* 0x00 */ BbCertId certId;
+    /* 0x00 */ BbCertBase certId;
     /* 0x8C */ u32 publicKey[16];
     /* 0xCC */ BbGenericSig signature;
 } BbEccCert; // size = 0x2CC
 
 typedef struct {
-    /* 0x000 */ BbCertId certId;
+    /* 0x000 */ BbCertBase certId;
     /* 0x08C */ BbRsaPublicKey2048 publicKey;
     /* 0x18C */ BbRsaExponent exponent;
     /* 0x190 */ BbGenericSig signature;
@@ -101,6 +125,8 @@ typedef struct {
     /* 0x9C */ BbAesKey key;
     /* 0xAC */ BbRsaSig2048 contentMetaDataSign;
 } BbContentMetaDataHead; // size = 0x1AC
+
+#define CMD_EXEC_FLAG_RECRYPT (1 << 1)
 
 typedef struct {
     /* 0x0000 */ BbContentDesc contentDesc;
@@ -139,16 +165,10 @@ typedef enum {
     CRL_UNUSED2 = 2
 } BbCrlUnusedEnumType;
 
-typedef enum {
-    CRL_TS,
-    CRL_CA,
-    CRL_CP
-} BbCrlNum;
-
 typedef struct {
     /* 0x0000 */ BbGenericSig signature;
-    /* 0x0200 */ u32 type;
-    /* 0x0204 */ u32 sigType;
+    /* 0x0200 */ u32 type; // BbCrlType
+    /* 0x0204 */ u32 sigType; // BbSigType
     /* 0x0208 */ BbCrlUnusedEnumType unusedPadding;
     /* 0x020C */ u32 versionNumber;
     /* 0x0210 */ u32 date;
@@ -171,17 +191,18 @@ typedef struct {
 typedef struct {
     /* 0x00 */ void* data;
     /* 0x04 */ u32 size;
-} rsaDataBlock; // size = 8
+} RSADataBlock; // size = 8
 
 typedef enum {
-    RSA_2048 = 0,
-    RSA_4096
-} RsaSize;
+    RECRYPT_STATUS_COMPLETE  = 2,
+    RECRYPT_STATUS_PARTIAL   = 3,
+    RECRYPT_STATUS_BEGINNING = 4
+} RecryptStatus;
 
 typedef struct {
     /* 0x00 */ BbContentId contentId;
     /* 0x04 */ BbAesKey contentKey;
-    /* 0x14 */ u32 unk14;
+    /* 0x14 */ RecryptStatus recryptStatus;
     /* 0x18 */ char unk18[8];
 } RecryptListEntry;
 
@@ -191,10 +212,12 @@ typedef struct {
     /* 0x44 */ RecryptListEntry entries[1/*numEntries*/];
 } RecryptList;
 
+#define RECRYPT_LIST_IDENTITY 0x06091968
+
 #define RECRYPT_LIST_MAX_SIZE 0x4000
 
 s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
-s32 check_unknown_range(void* ptr, u32 size, u32 alignment);
+s32 check_sk_ptr_range(void* ptr, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \
     check_untrusted_ptr_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
@@ -206,10 +229,10 @@ s32 check_unknown_range(void* ptr, u32 size, u32 alignment);
     check_untrusted_ptr_range((ptr), RECRYPT_LIST_MAX_SIZE, ALIGNOF(*(ptr)))
 
 #define CHECK_SKRAM_RANGE(ptr) \
-    check_unknown_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
+    check_sk_ptr_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
 
 #define CHECK_SKRAM_ARRAY_RANGE(ptr, count) \
-    check_unknown_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
+    check_sk_ptr_range((ptr), (count)*sizeof(*(ptr)), ALIGNOF(*(ptr)))
 
 #define OS_READ  0
 #define OS_WRITE 1
@@ -219,18 +242,18 @@ void startup(void);
 void launch_app_trampoline(void);
 s32 write_virage01_data(BbVirage01* virageData);
 u16* getTrialConsumptionByTid(u16 tid);
-s32 verify_cert_chain(BbCertBase** certChain, s32 serverType);
+s32 verify_cert_chain(BbCertBase** certChain, BbServerType serverType);
 s32 check_cert_ranges(BbCertBase**);
 s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrls* crls);
-s32 recrypt_list_get_key_for_cid(RecryptList* list, BbAesKey* key, BbContentId contentId);
+RecryptStatus recrypt_list_get_key_for_cid(RecryptList* list, BbAesKey* key, BbContentId contentId);
 void aes_cbc_set_key_iv(BbAesKey* key, BbAesIv* iv);
 void set_proc_permissions(BbContentMetaDataHead* cmdHead);
 s32 recrypt_list_verify_size_and_sig(RecryptList* list);
-s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, u32 arg2);
-s32 dma_from_cart(s32 bufSelect, void* outBuf, s32 length, s32 direction);
-void AES_Run(s32 arg0, s32 continuation);
-void func_9FC03694(u8* data, u32 datasize, u32* private_key, BbEccSig* signature, u32 identity);
-s32 check_crlbundle_ranges(BbAppLaunchCrls* launchCrls);
+s32 recrypt_list_add_new_entry(RecryptList* list, BbContentId contentId, RecryptStatus recryptStatus);
+s32 pi_buffer_dma(s32 bufSelect, void* outBuf, s32 length, s32 direction);
+void AES_Run(s32 bufSelect, s32 continuation);
+void ecc_sign_data(u8* data, u32 datasize, u32* private_key, BbEccSig* signature, u32 identity);
+s32 check_applaunch_crl_ranges(BbAppLaunchCrls* launchCrls);
 s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion,
                           BbCrlBundle* cprl, s32 requiredCprlVersion,
                           BbCrlBundle* tsrl, s32 requiredTsrlVersion);
@@ -239,27 +262,35 @@ void virage2_gen_public_key(u32* pubkeyOut);
 s32 write_virage2(void);
 s32 write_virage_data(u32 controller, u32 *data, s32 size);
 s32 set_virage01_selector(BbVirage01* virageData);
-s32 card_read_page(u32 block, s32 bufSelect);
+s32 card_read_page(u32 pageNum, s32 bufSelect);
 s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBase** chain,
                                         BbAppLaunchCrls* appLaunchCrls);
 void osInvalDCache(void* buf, s32 len);
-s32 func_9FC04220(void);
-s32 func_9FC0425C(u32 ctrlReg);
-s32 func_9FC04304(u32 ctrlReg);
+s32 get_clock_divider(void);
+s32 virage_load_flash(u32 statusReg);
+s32 virage_store_sram(u32 ctrlReg);
 void* wordcopy(void* dst, void* src, s32 nWords);
-s32 func_9FC047CC(u8* a0, s32 a1);
+s32 randomness_test(u8* a0, u32 a1);
 void initialize_virage_controllers(void);
-s32 func_9FC035EC(u32* randomOut, s32 nWords);
-s32 rsa_verify_signature(rsaDataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey, const u32 certexponent,
-                         RsaSize rsaSize, u32* certsign);
-s32 rsa_check_signature(u8* digest, const u32* certpublickey, const u32 certexponent, RsaSize rsaSize, u32* certsign);
+s32 gen_random_key_material(u32* randomOut, s32 nWords);
+s32 rsa_verify_signature(RSADataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey, const u32 certexponent,
+                         BbSigType rsaSigType, u32* certsign);
+s32 rsa_check_signature(BbShaHash* digest, const u32* certpublickey, const u32 certexponent, BbSigType rsaSigType, u32* certsign);
+
+typedef enum {
+    TRIAL_TYPE_0, // Timed
+    TRIAL_TYPE_1, // Number of launches
+    TRIAL_TYPE_2, // Timed
+    TRIAL_TYPE_UNSET = 0xFFFF
+} AppTrialType;
 
 extern const u32 rootRSAPublicKey[];
 extern const u32 rootRSAExponent;
 
 extern BbVirage2* virage2_offset;
-extern u16 D_9FC0EBB0;
-extern s16 D_9FC0EBB2;
+extern BbTicketId g_cur_trial_tid;
+#define TRIAL_TID_UNSET 0xFFFF
+extern s16 g_cur_trial_cc;
 extern u16 g_cur_proc_trial_type;
 
 #endif

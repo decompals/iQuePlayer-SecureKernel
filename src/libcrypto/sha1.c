@@ -100,7 +100,7 @@ int SHA1Input(SHA1Context* ctx, SHA1_BYTE* buffer, int count) {
     // A previous block wasn't divisible by 0x40
     // Fill up the rest of the block before processing
     if (res != 0) {
-        // Total size to process is current position + size 
+        // Total size to process is current position + size
         int res2 = res + count;
 
         // We're processing more than 0x40 bytes and guaranteed to not be divisible by 0x40.
@@ -127,9 +127,9 @@ int SHA1Input(SHA1Context* ctx, SHA1_BYTE* buffer, int count) {
         }
     }
 
-    // Process 0x40 aligned blocks 
+    // Process 0x40 aligned blocks
     while(count >= 0x40) {
-        // Copy in next block to process 
+        // Copy in next block to process
         memcpy(ctx->data, buffer, 0x40);
 
         // Porcess block

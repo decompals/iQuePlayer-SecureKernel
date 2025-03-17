@@ -524,7 +524,7 @@ void rijndaelEncrypt(u32* rk, int Nr, u8* pt, u8* ct) {
              ARRSHFT2(Te2, t1, 8) ^ ARRSHFT2(Te3, t2, 0) ^ rk[4 * 0 + 3];
     }
 
-    s0 = ARRSHFT(Te4, t0, 24, 24) ^ ARRSHFT(Te4, t1, 16, 16) ^ 
+    s0 = ARRSHFT(Te4, t0, 24, 24) ^ ARRSHFT(Te4, t1, 16, 16) ^
          ARRSHFT(Te4, t2,  8,  8) ^ ARRSHFT(Te4, t3,  0,  0) ^ rk[0];
     U32_TO_U8x4(ct,  0, s0);
     s1 = ARRSHFT(Te4, t1, 24, 24) ^ ARRSHFT(Te4, t2, 16, 16) ^

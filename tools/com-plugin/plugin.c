@@ -577,7 +577,7 @@ parse_order_file(const char *order_file)
         if (oneline && *s == '\n')
             comment = false;
 
-        if (comment && !oneline && *s == '*' && s[1] == '/') 
+        if (comment && !oneline && *s == '*' && s[1] == '/')
             comment = false, s[0] = s[1] = ' ';
 
         if (comment && (*s != '\n'))
@@ -685,7 +685,7 @@ fpath:
 obrace:
     // We're looking for an opening brace character {, anything else is a fail
     if (*s++ != '{') SYNTAX_ERR("Expected an {");
-    // NULL-terminate the file path in-place and save it 
+    // NULL-terminate the file path in-place and save it
     *end = '\0';
     cur_ofile++;
     cur_symbol = 0;

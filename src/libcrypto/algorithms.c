@@ -38,7 +38,7 @@ BSL_error eccGenAesKey(u32* publicKey, u32* privateKey, u32* sharedKey) {
 }
 
 /**
- * Generate `publicKey` corresponding to `privateKey` on the sect233r1 elliptic curve 
+ * Generate `publicKey` corresponding to `privateKey` on the sect233r1 elliptic curve
  */
 BSL_error eccGenPublicKey(u32* publicKey, u32* privateKey) {
     field_2n pvtkey;

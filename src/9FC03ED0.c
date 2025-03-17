@@ -5,8 +5,9 @@ char enter_exception_str[] = "ENTERING_EXCEPTION HANDLER!!!\n";
 
 typedef void (*ExceptionCallback)(const char*);
 
-void func_9FC03ED0(ExceptionCallback cb) {
+void exception_handler_trampoline(ExceptionCallback cb) {
     cb((char*)PHYS_TO_K1(enter_exception_str));
-    IO_WRITE(PI_MISC_REG, 0x30);
+    // Power off
+    IO_WRITE(PI_GPIO_REG, (PI_GPIO_O_PWR | PI_GPIO_PWR_OFF) | (PI_GPIO_O_LED | PI_GPIO_LED_ON));
     while(1);
 }

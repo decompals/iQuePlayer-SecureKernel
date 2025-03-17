@@ -20,8 +20,8 @@ DATA(skc_table)
     .word skSetLimit
     .word skExit
     .word skKeepAlive
-ENDDATA(skc_table)
 skc_table_end:
+ENDDATA(skc_table)
 
 DATA(skc_table_size)
     .word (skc_table_end - skc_table) / 4
@@ -72,9 +72,7 @@ LEAF(entrypoint)
     // Fallthrough into startup for resets/bootup
 .set at
 .set reorder
-END(entrypoint)
-
-LEAF(startup)
+XLEAF(startup)
     // clear bss via uncached memory
     la      t0, __bss_start
     la      t1, __bss_end - 4
@@ -97,14 +95,14 @@ LEAF(startup)
 
     // launch system app
     j       launch_app_trampoline
-END(startup)
+END(entrypoint)
 
 .fill 0x380 - (. - entrypoint)  /* General Exception Vector (BEV=1) */
 LEAF(__skException)
     // Secure mode faults end up here. Load the fault handler and jump to it
     // in uncached memory.
-    la      k0, func_9FC03ED0
-    la      a0, func_9FC00A7C
+    la      k0, exception_handler_trampoline
+    la      a0, exception_handler
 
     or      k0, K1BASE
     or      a0, K1BASE
@@ -128,8 +126,8 @@ END(launch_app_trampoline)
 
 LEAF(launch_app)
     // read and clear flags to pass to app
-    lw      t3, D_9FC0EBB8
-    sw      zero, D_9FC0EBB8
+    lw      t3, g_app_flags
+    sw      zero, g_app_flags
     // clear the SK stack memory
     la      t0, wipe_sk_stack
     jalr    t0
@@ -498,7 +496,8 @@ LEAF(__handle_other_2)
     and     sp, ~K1BASE
     or      sp, K0BASE
 
-    la      t2, PHYS_TO_K1(MI_18_REG)
+    // disarm the timer
+    la      t2, PHYS_TO_K1(MI_SK_TIMER_REG)
     sw      zero, (t2)
     nop
 

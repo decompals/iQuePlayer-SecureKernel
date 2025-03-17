@@ -186,7 +186,7 @@ void poly_mul_partial(const field_2n* a, const field_2n* b, field_double* c) {
 
     mask = 0xF0000000;
     multiplier = 7;
-    for (i = 7; GEQ0(i); i--) {        
+    for (i = 7; GEQ0(i); i--) {
         for (bit_count = 7; bit_count >= 0; bit_count--) {
             num_shift = 7 - bit_count;
             b_start = (mask & a->e[bit_count]) >> (i * 4);
@@ -289,7 +289,7 @@ void zero_masked_bits(field_double* a, const field_double* mask) {
 }
 
 /**
- * 
+ *
  */
 void shift_and_add(field_double* temp, const field_double* extract_mask) {
     field_double temp1;

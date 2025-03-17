@@ -22,7 +22,8 @@ x:;                 \
     .frame  sp,0,ra
 
 #define XLEAF(x)    \
-    .global x;
+    .global x;      \
+    x:
 
 #define END(proc)   \
     .end    proc
