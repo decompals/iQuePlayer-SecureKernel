@@ -18,11 +18,18 @@ ifeq ($(ORIG_COMPILER), 0)
   CFLAGS  := $(INC) -G 0 -nostdinc -DNON_MATCHING -std=gnu99 -march=vr4300 -mtune=vr4300 -fno-PIC -mno-abicalls -mips3 -ffunction-sections -fdata-sections -mgp32 -fno-common -fno-builtin -ffreestanding
   ASFLAGS := $(INC) -G 0 -nostdinc -DNON_MATCHING -std=gnu99 -march=vr4300 -mtune=vr4300 -fno-PIC -mno-abicalls -mips3
 
-  CFLAGS  += -Wall -Wextra -pedantic
+  WARNFLAGS := -Wall -Wextra -pedantic
+  WARNFLAGS += -Wshadow -Wpointer-arith -Wduplicated-cond -Wduplicated-branches -Wformat=2 -Wlogical-op -Wrestrict -Wnull-dereference -Woverflow
+  WARNFLAGS += -Werror=double-promotion
+  WARNFLAGS += -Werror=implicit-int -Werror=implicit-function-declaration -Werror=int-conversion -Werror=incompatible-pointer-types -Werror=return-type
+
+  CFLAGS  += $(WARNFLAGS)
   CPPFLAGS += -DNON_MATCHING
 
   LD      := $(CC)
   LDFLAGS  = -nostdlib -Wl,--gc-sections -Wl,-Map,$(@:.elf=.map)# -Wl,--print-gc-sections
+
+  LD_BSS_PLUGIN :=
 else
   export COMPILER_PATH := tools/egcs/
   CC      := $(COMPILER_PATH)gcc
@@ -33,6 +40,8 @@ else
 
   LD      := $(CROSS)ld
   LDFLAGS  = -Map $(@:.elf=.map)
+
+  LD_BSS_PLUGIN := -plugin tools/com-plugin/common-plugin.so -plugin-opt order=bss_order.txt
 endif
 
 CFLAGS += -D_LANGUAGE_C
@@ -47,15 +56,14 @@ STRIP   := $(CROSS)strip
 
 # Source dirs
 SRC_DIRS := $(shell find src -type d)
-ASM_DIRS := $(shell find asm -type d -not -path "asm/non_matchings*")
 # Source files
 C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
-S_FILES := $(foreach dir,$(SRC_DIRS) $(ASM_DIRS),$(wildcard $(dir)/*.s))
+S_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.s))
 O_FILES := $(foreach f,$(C_FILES:.c=.o),build/$f) \
            $(foreach f,$(S_FILES:.s=.o),build/$f)
 
 # Create build directories
-$(shell mkdir -p build $(foreach dir,$(SRC_DIRS) $(ASM_DIRS),build/$(dir)))
+$(shell mkdir -p build $(foreach dir,$(SRC_DIRS),build/$(dir)))
 
 .PHONY: all clean distclean setup
 
@@ -86,11 +94,11 @@ $(TARGET): $(ELF)
 	dd if=$(@:.bin=.tmp) of=$@ bs=16K conv=sync status=none
 	@$(RM) $(@:.bin=.tmp)
 
-build/sk.lcf: sk.lcf
+build/sk.ld: sk.ld
 	$(CPP) $(CPPFLAGS) $< -o $@
 
-$(ELF): $(O_FILES) build/sk.lcf
-	$(LD) $(LDFLAGS) -T build/sk.lcf -o $@
+$(ELF): $(O_FILES) build/sk.ld bss_order.txt
+	$(LD) $(LD_BSS_PLUGIN) $(LDFLAGS) -T build/sk.ld -o $@
 
 build/asm/%.o: asm/%.s
 	$(AS) -march=vr4300 --no-pad-sections -I include $< -o $@

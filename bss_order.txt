@@ -1,0 +1,20 @@
+build/__bss.o {
+    g_trial_time_counter;
+    contentMetaDataHead;
+    ticketHead;
+    sha1_ctx;
+    recrypt_size_processed;
+    recryptKeyInstance;
+    recryptCipherInstance;
+    recrypt_began_from_list;
+    recrypt_iv_continuation;
+    recrypt_iv;
+    unused_pad;
+    g_trial_time_elapsed;
+    g_cur_proc_trial_limit;
+    virage01;
+    cur_proc_allowed_skc_bitmask;
+    named_curve;
+    precomputed_bp;
+    named_point;
+}

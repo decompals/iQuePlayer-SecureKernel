@@ -6,10 +6,12 @@ EGCS-AS := $(EGCS_DIR)/as
 EGCS-1.1.2 := $(EGCS_DIR)/gcc
 
 all: $(EGCS-AS) $(EGCS-1.1.2)
+	$(MAKE) -C com-plugin
 
 clean:
 distclean: clean
 	$(RM) -rf $(GCC_DIR) $(EGCS_DIR)
+	$(MAKE) -C com-plugin clean
 
 # EGCS
 
