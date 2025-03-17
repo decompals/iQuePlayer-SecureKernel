@@ -85,7 +85,7 @@ XLEAF(startup)
      add    t0, 4
 .set reorder
     // set up stack with a cached pointer
-    li      sp, PHYS_TO_K0(0x1FC48000)
+    la      sp, PHYS_TO_K0(0x1FC48000)
     addu    sp, -0x138
 
     // hardware init and load system app, runs cached
@@ -107,7 +107,7 @@ LEAF(__skException)
     or      k0, K1BASE
     or      a0, K1BASE
 
-    li      sp, PHYS_TO_K0(0x1FC48000)
+    la      sp, PHYS_TO_K0(0x1FC48000)
     addu    sp, -0x138
     or      sp, K1BASE
 
@@ -168,7 +168,7 @@ LEAF(__handle_skc)
     move    k0, sp
     la      sp, PHYS_TO_K0(0x1FC48000)
     addiu   sp, -0x138
-    li      k1, K1BASE
+    la      k1, K1BASE
     or      sp, k1
 
     // Save registers according to the O32 ABI. Since SKCs are assumed to come from a
@@ -229,7 +229,8 @@ LEAF(skc_handler)
     la      t2, skc_table_size
     lw      t3, (t2)
 
-    // BUG: eSKape, this should have been an unsigned comparison e.g. bgeu
+    //! @bug eSKape, this should have been an unsigned comparison e.g. bgeu
+    //! Negative SKCs load a function pointer from out-of-bounds of the table, potentially in user-controlled space.
     bge     v0, t3, .bad_skc_num
 
     // check if this SKC is allowed to be called by the current process
@@ -311,7 +312,7 @@ LEAF(__handle_timer_expiry)
 .set noat
     // set up stack
     move    k0, sp
-    li      sp, PHYS_TO_K1(0x1FC48000)
+    la      sp, PHYS_TO_K1(0x1FC48000)
     addu    sp, -0x138
 
     // save registers, unlike the SKC handler this saves a full set as the
@@ -469,7 +470,7 @@ LEAF(__handle_other)
     move    k0, sp
     la      sp, PHYS_TO_K0(0x1FC48000)
     addu    sp, -0x138
-    li      k1, K1BASE
+    la      k1, K1BASE
     or      sp, k1
 
     la      gp, _gp

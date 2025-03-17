@@ -11,7 +11,11 @@
 #define ALIGNOF(x) __alignof__(x)
 #endif
 
-#define offsetof(structure, member) ((size_t)&(((structure*)0)->member))
+#if (__GNUC__ < 3)
+#define offsetof(type, member) ((size_t)&(((type*)0)->member))
+#else
+#define offsetof(type, member) __builtin_offsetof(type, member)
+#endif
 
 #ifndef NON_MATCHING
 #define ITER_TYPE short

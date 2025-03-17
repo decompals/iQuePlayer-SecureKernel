@@ -146,7 +146,9 @@ s32 verify_system_app(s32* blockPtr) {
 
     appLaunchCrls = (BbAppLaunchCrls*)(SKRAM_START + sizeof(*cmd) + (ARRAY_COUNT(certChain) - 1) * sizeof(BbRsaCert));
 
-#define RELOCATE_PTR(field) { (field) = (void*)((u8*)(field) + SKRAM_START); }(void)0
+#define RELOCATE_PTR(field)                            \
+    { (field) = (void*)((u8*)(field) + SKRAM_START); } \
+    (void)0
 
     if (appLaunchCrls->carl.head != NULL) {
         RELOCATE_PTR(appLaunchCrls->carl.head);
@@ -172,10 +174,12 @@ s32 verify_system_app(s32* blockPtr) {
     rsa.data = (void*)cmd;
     rsa.size = sizeof(*cmd) - sizeof(cmd->contentMetaDataSign);
 
-    if (rsa_verify_signature(&rsa, 1, (void*)&certChain[0]->publicKey, certChain[0]->exponent, SIGTYPE_RSA2048, cmd->contentMetaDataSign) < 0) {
+    if (rsa_verify_signature(&rsa, 1, (void*)&certChain[0]->publicKey, certChain[0]->exponent, SIGTYPE_RSA2048,
+                             cmd->contentMetaDataSign) < 0) {
         return -1;
     }
-    if (aes_SwDecrypt((u8*)&virage2_offset->bootAppKey, (u8*)cmd->commonCmdIv, (u8*)cmd->key, sizeof(cmd->key), (u8*)&decryptedKey) < 0) {
+    if (aes_SwDecrypt((u8*)&virage2_offset->bootAppKey, (u8*)cmd->commonCmdIv, (u8*)cmd->key, sizeof(cmd->key),
+                      (u8*)&decryptedKey) < 0) {
         return -1;
     }
 
@@ -187,7 +191,8 @@ s32 verify_system_app(s32* blockPtr) {
     return 0;
 }
 
-s32 card_hash_page(s32 block, s32 bufSelect, s32 continuation, void** outBufPtr, u32 length, SHA1Context* sha1ctx, s32 firstBlock) {
+s32 card_hash_page(s32 block, s32 bufSelect, s32 continuation, void** outBufPtr, u32 length, SHA1Context* sha1ctx,
+                   s32 firstBlock) {
     s32 ret;
     void** entrypointP;
 
@@ -290,8 +295,7 @@ s32 load_system_app(u32* systemAppEntrypointOut) {
     return ret;
 }
 
-#define THROW_EXCEPTION() \
-    ((void (*)())PHYS_TO_K1(R_VEC + 0x200 + E_VEC))()
+#define THROW_EXCEPTION() ((void (*)())PHYS_TO_K1(R_VEC + 0x200 + E_VEC))()
 
 u32 setup_system(void) {
     u32 systemAppEntrypoint;
@@ -311,10 +315,10 @@ u32 setup_system(void) {
     IO_WRITE(SI_STATUS_REG, 0); // clears SI interrupt
     IO_WRITE(MI_MODE_REG, MI_CLR_DP_INTR);
     IO_WRITE(MI_INTR_MASK_REG, MI_INTR_MASK_CLR_SP | MI_INTR_MASK_CLR_SI | MI_INTR_MASK_CLR_AI | MI_INTR_MASK_CLR_VI |
-            MI_INTR_MASK_CLR_PI | MI_INTR_MASK_CLR_DP); // clears n64 interrupts
+                                   MI_INTR_MASK_CLR_PI | MI_INTR_MASK_CLR_DP); // clears n64 interrupts
     IO_WRITE(MI_HW_INTR_MASK_REG, MI_HW_INTR_MASK_CLR_FLASH | MI_HW_INTR_MASK_CLR_AES | MI_HW_INTR_MASK_CLR_IDE |
-             MI_HW_INTR_MASK_CLR_PI_ERR | MI_HW_INTR_MASK_CLR_USB0 | MI_HW_INTR_MASK_CLR_USB1 |
-             MI_HW_INTR_MASK_CLR_PWR_BTN | MI_HW_INTR_MASK_CLR_MD); // disables ique interrupts
+                                      MI_HW_INTR_MASK_CLR_PI_ERR | MI_HW_INTR_MASK_CLR_USB0 | MI_HW_INTR_MASK_CLR_USB1 |
+                                      MI_HW_INTR_MASK_CLR_PWR_BTN | MI_HW_INTR_MASK_CLR_MD); // disables ique interrupts
 
     set_virage01_selector(&virage01);
 

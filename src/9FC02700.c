@@ -98,7 +98,8 @@ s32 verify_cert_signature(BbCertBase* toVerify, BbRsaCert* toVeryifyAgainst) {
         return rsa_verify_signature(&dataBlock, 1, rootRSAPublicKey, rootRSAExponent, SIGTYPE_RSA4096, signature);
     } else if (toVerify->sigType == SIGTYPE_RSA2048 || toVerify->sigType == SIGTYPE_RSA4096) {
         // Use next cert RSA
-        return rsa_verify_signature(&dataBlock, 1, toVeryifyAgainst->publicKey, toVeryifyAgainst->exponent, toVerify->sigType, signature);
+        return rsa_verify_signature(&dataBlock, 1, toVeryifyAgainst->publicKey, toVeryifyAgainst->exponent,
+                                    toVerify->sigType, signature);
     }
     return -1;
 }

@@ -2,7 +2,7 @@
 #include "macros.h"
 
 const field_2n poly_prime = {
-    { 0x00000200, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000400, 0x00000000, 0x00000001 },
+    {0x00000200, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000400, 0x00000000, 0x00000001},
 };
 
 const element rightmask[32] = {
@@ -20,22 +20,13 @@ const element leftmask[32] = {
 };
 
 const u8 shift_by[256] = {
-    8, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
-    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    8, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2,
+    0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 6, 0, 1, 0, 2, 0, 1, 0, 3, 0,
+    1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1,
+    0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0,
+    2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3,
+    0, 1, 0, 2, 0, 1, 0, 6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0,
+    1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
 };
 
 void null(field_2n* a) {
@@ -168,14 +159,14 @@ void poly_mul_partial(const field_2n* a, const field_2n* b, field_double* c) {
     }
 
     for (i = 0; i < 15u; i++) {
-        bprep[ 3].e[i] = bprep[ 2].e[i] ^ bprep[1].e[i];
-        bprep[ 5].e[i] = bprep[ 4].e[i] ^ bprep[1].e[i];
-        bprep[ 6].e[i] = bprep[ 4].e[i] ^ bprep[2].e[i];
-        bprep[ 7].e[i] = bprep[ 6].e[i] ^ bprep[1].e[i];
-        bprep[ 9].e[i] = bprep[ 8].e[i] ^ bprep[1].e[i];
-        bprep[10].e[i] = bprep[ 8].e[i] ^ bprep[2].e[i];
+        bprep[3].e[i] = bprep[2].e[i] ^ bprep[1].e[i];
+        bprep[5].e[i] = bprep[4].e[i] ^ bprep[1].e[i];
+        bprep[6].e[i] = bprep[4].e[i] ^ bprep[2].e[i];
+        bprep[7].e[i] = bprep[6].e[i] ^ bprep[1].e[i];
+        bprep[9].e[i] = bprep[8].e[i] ^ bprep[1].e[i];
+        bprep[10].e[i] = bprep[8].e[i] ^ bprep[2].e[i];
         bprep[11].e[i] = bprep[10].e[i] ^ bprep[1].e[i];
-        bprep[12].e[i] = bprep[ 8].e[i] ^ bprep[4].e[i];
+        bprep[12].e[i] = bprep[8].e[i] ^ bprep[4].e[i];
         bprep[13].e[i] = bprep[12].e[i] ^ bprep[1].e[i];
         bprep[14].e[i] = bprep[12].e[i] ^ bprep[2].e[i];
         bprep[15].e[i] = bprep[14].e[i] ^ bprep[1].e[i];
@@ -211,7 +202,6 @@ void poly_mul_partial(const field_2n* a, const field_2n* b, field_double* c) {
         mask >>= 4;
     }
 }
-
 
 /**
  * Computes a *= 2^n
@@ -266,7 +256,7 @@ void divide_shift_n(field_double* a, int n) {
     bit = 0;
     for (i = 0; i < (unsigned)ARRAY_COUNT(a->e); i++) {
         temp = (*eptr >> n) | bit;
-        bit= (*eptr & rightmask[n]) << (32 - n);
+        bit = (*eptr & rightmask[n]) << (32 - n);
         *eptr++ = temp;
     }
 }
@@ -452,7 +442,7 @@ void poly_inv(const field_2n* a, field_2n* dest) {
 
     null(&c); // C = 0
     null(&b);
-    copy(a, &f); // F = a
+    copy(a, &f);           // F = a
     copy(&poly_prime, &g); // G = p
     c_top = longword;
     f_top = 0;

@@ -31,7 +31,6 @@ void virage2_gen_public_key(u32* pubkeyOut) {
     wordcopy(virage2_offset->publicKey, pubkeyOut, ARRAY_COUNT(virage2_offset->publicKey));
 }
 
-
 void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
     s32 temp;
 
@@ -52,8 +51,8 @@ void set_proc_permissions(BbContentMetaDataHead* cmdHead) {
  *     -1 if either rsaSize was invalid or the signature is not valid for the data
  *      0 if the signature is valid for the data
  */
-s32 rsa_verify_signature(RSADataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey,
-                          const u32 certexponent, BbSigType rsaSigType, u32* certsign) {
+s32 rsa_verify_signature(RSADataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey, const u32 certexponent,
+                         BbSigType rsaSigType, u32* certsign) {
     BbShaHash digest;
     SHA1Context sha1ctx;
     s32 i;
@@ -109,7 +108,7 @@ s32 collect_random_data(u32* randomOut, s32 nWords) {
         u32 words[5];
         u8 bytes[0x14];
     } digest;
-    u8  randomByte;
+    u8 randomByte;
     s32 i;
     s32 j;
     s32 k;
@@ -224,7 +223,7 @@ s32 verify_ecc_signature(u8* data, u32 datasize, u32* public_key, u32* signature
  *      0 Otherwise
  */
 s32 pi_dma_wait(void) {
-    while(IO_READ(PI_STATUS_REG) & (PI_STATUS_DMA_BUSY | PI_STATUS_IO_BUSY)) {
+    while (IO_READ(PI_STATUS_REG) & (PI_STATUS_DMA_BUSY | PI_STATUS_IO_BUSY)) {
         if (IO_READ(PI_STATUS_REG) & PI_STATUS_ERROR) {
             return -1;
         }
@@ -283,9 +282,9 @@ void AES_Run(s32 bufSelect, s32 continuation) {
     if (continuation) {
         ctrl |= 1; // IV from end of last decryption job
     } else {
-        ctrl |= (0x4D0/0x10) << 1; // IV from the IV buffer
+        ctrl |= (0x4D0 / 0x10) << 1; // IV from the IV buffer
     }
-    ctrl |= (0x200/0x10 - 1) << 16; // Decrypt whole buffer
+    ctrl |= (0x200 / 0x10 - 1) << 16; // Decrypt whole buffer
 
     IO_WRITE(PI_AES_CTRL_REG, ctrl);
 }
@@ -328,7 +327,7 @@ s32 card_read_page(u32 pageNum, s32 bufSelect) {
 // TODO: File split here?
 
 char* strchr(char* str, char c) {
-    for ( ; *str != c; str++) {
+    for (; *str != c; str++) {
         if (*str == '\0') {
             return NULL;
         }
@@ -550,7 +549,7 @@ s32 set_virage01_selector(BbVirage01* virageData) {
     return 0;
 }
 
-u16 *getTrialConsumptionByTid(BbTicketId tid) {
+u16* getTrialConsumptionByTid(BbTicketId tid) {
     tid &= 0x7FFF;
 
     if (tid < virage01.tidWindow || tid >= virage01.tidWindow + ARRAY_COUNT(virage01.cc)) {
@@ -630,7 +629,8 @@ s32 check_cert_ranges(BbCertBase** certChain) {
         }
     } else {
         // ECC -> RSA -> RSA
-        if (CHECK_UNTRUSTED((BbEccCert*)certChain[0]) && CHECK_UNTRUSTED((BbRsaCert*)certChain[1]) && CHECK_UNTRUSTED((BbRsaCert*)certChain[2])) {
+        if (CHECK_UNTRUSTED((BbEccCert*)certChain[0]) && CHECK_UNTRUSTED((BbRsaCert*)certChain[1]) &&
+            CHECK_UNTRUSTED((BbRsaCert*)certChain[2])) {
             return TRUE;
         }
     }

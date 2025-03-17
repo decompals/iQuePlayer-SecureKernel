@@ -33,9 +33,7 @@ u32 g_app_flags = 0; // System app launch flags, passed as first arg to system a
  *         false if any of the ticket bundle pointers are invalid
  */
 s32 check_ticket_bundle_ranges(BbTicketBundle* bundle) {
-    if (CHECK_UNTRUSTED(bundle) &&
-        CHECK_UNTRUSTED(bundle->ticket) &&
-        check_cert_ranges(bundle->ticketChain) &&
+    if (CHECK_UNTRUSTED(bundle) && CHECK_UNTRUSTED(bundle->ticket) && check_cert_ranges(bundle->ticketChain) &&
         check_cert_ranges(bundle->cmdChain)) {
         return TRUE;
     }
@@ -89,7 +87,7 @@ s32 verify_and_load_ticket_bundle(BbTicketBundle* bundle) {
 
     ticketCert = (BbRsaCert*)bundle->ticketChain[0];
     if (rsa_verify_signature(blocks, 1, ticketCert->publicKey, ticketCert->exponent, SIGTYPE_RSA2048,
-        bundle->ticket->head.ticketSign) >= 0) {
+                             bundle->ticket->head.ticketSign) >= 0) {
         // Ticket chain verified, save the CMD head
         memcpy(&contentMetaDataHead, cmdHead, sizeof(BbContentMetaDataHead));
         // Derive the AES key for decrypting the CMD key from the server's public key and the console's private key
@@ -103,7 +101,7 @@ s32 verify_and_load_ticket_bundle(BbTicketBundle* bundle) {
 
         cmdCert = (BbRsaCert*)bundle->cmdChain[0];
         if (rsa_verify_signature(blocks, ARRAY_COUNT(blocks), cmdCert->publicKey, cmdCert->exponent, SIGTYPE_RSA2048,
-            bundle->ticket->cmd.head.contentMetaDataSign) >= 0) {
+                                 bundle->ticket->cmd.head.contentMetaDataSign) >= 0) {
             aes_SwDecrypt((u8*)virage2_offset->bootAppKey, (u8*)cmdHead->commonCmdIv, (u8*)contentMetaDataHead.key,
                           sizeof(BbAesKey), (u8*)decryptedKey);
             memcpy(contentMetaDataHead.key, decryptedKey, sizeof(BbAesKey));
@@ -113,12 +111,12 @@ s32 verify_and_load_ticket_bundle(BbTicketBundle* bundle) {
     return -1;
 }
 
-s32 skGetId(BbId* id) {
-    if (!CHECK_UNTRUSTED(id)) {
+s32 skGetId(BbId* bbId) {
+    if (!CHECK_UNTRUSTED(bbId)) {
         return -1;
     }
 
-    *id = virage2_offset->bbId;
+    *bbId = virage2_offset->bbId;
 
     return 0;
 }
@@ -133,7 +131,8 @@ s32 skGetId(BbId* id) {
  *     -4 if verification of cprl failed
  *     -9 if any certificates in cprl or tsrl or the ticket bundle were revoked
  */
-s32 verify_ticket_bundle_against_crls(BbTicketBundle* bundle, BbAppLaunchCrls* crls, BbRecryptList* recryptList, s32 recrypt) {
+s32 verify_ticket_bundle_against_crls(BbTicketBundle* bundle, BbAppLaunchCrls* crls, BbRecryptList* recryptList,
+                                      s32 recrypt) {
     s32 ret;
 
     // Check if the ticket bundle has valid pointers
@@ -221,18 +220,18 @@ s32 skLaunchSetup(BbTicketBundle* bundle, BbAppLaunchCrls* crls, BbRecryptList* 
  *          or if a trial has expired
  *      Does not return if successful.
  */
-s32 skLaunch(void* app_entrypoint) {
+s32 skLaunch(void* entrypoint) {
     BbShaHash digest;
     u8* ptr;
     u16* cc;
     s32 a1;
 
-    if (!check_untrusted_ptr_range(app_entrypoint, 0, 4)) {
+    if (!check_untrusted_ptr_range(entrypoint, 0, 4)) {
         return -1;
     }
 
     if (!(contentMetaDataHead.execFlags & CMD_EXEC_FLAG_RECRYPT)) {
-        ptr = (u8*) app_entrypoint - 0x1000;
+        ptr = (u8*)entrypoint - 0x1000;
 
         if (!check_untrusted_ptr_range(ptr, contentMetaDataHead.size, 4)) {
             return -1;
@@ -298,12 +297,12 @@ s32 skLaunch(void* app_entrypoint) {
     }
 
     // launch the app, this does not return
-    __asm__(
-        "move $v0, %0;"
-        "la   $t0, %1;"
-        "jr   $t0;"
-        : : "r" (app_entrypoint), "i" (launch_app_trampoline) : "v0", "t0"
-    );
+    __asm__("move $v0, %0;"
+            "la   $t0, %1;"
+            "jr   $t0;"
+            :
+            : "r"(entrypoint), "i"(launch_app_trampoline)
+            : "v0", "t0");
 
     return -1;
 }
@@ -364,7 +363,9 @@ s32 recrypt_data(u8* buf, u32 size, s32 doEncrypt) {
         AES_Run(0, recrypt_iv_continuation);
         recrypt_iv_continuation = TRUE;
 
-        while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY);
+        while (IO_READ(PI_AES_STATUS_REG) & PI_AES_BUSY) {
+            ;
+        }
 
         left = contentMetaDataHead.size - recrypt_size_processed;
 
@@ -485,10 +486,10 @@ s32 skVerifyHash(BbShaHash* hash, u32* signature, BbCertBase** certChain, BbAppL
         if (!check_applaunch_crl_ranges(crls)) {
             return -1;
         }
-        if (verify_all_crlbundles(
-                &crls->carl, virage01.caCrlVersion,
-                &crls->cprl, virage01.cpCrlVersion,
-                &crls->tsrl, virage01.tsCrlVersion)) {
+
+        if (verify_all_crlbundles(&crls->carl, virage01.caCrlVersion, // force formatting
+                                  &crls->cprl, virage01.cpCrlVersion, //
+                                  &crls->tsrl, virage01.tsCrlVersion)) {
             return -1;
         }
 
@@ -521,14 +522,11 @@ s32 skVerifyHash(BbShaHash* hash, u32* signature, BbCertBase** certChain, BbAppL
             }
 
             // Check RSA2048 signature
-            return rsa_check_signature(hash,
-                ((BbRsaCert*)certChain[0])->publicKey,
-                ((BbRsaCert*)certChain[0])->exponent,
-                SIGTYPE_RSA2048, signature);
+            return rsa_check_signature(hash, ((BbRsaCert*)certChain[0])->publicKey,
+                                       ((BbRsaCert*)certChain[0])->exponent, SIGTYPE_RSA2048, signature);
         } else {
             // Check ECDSA signature
-            ret = verify_ecc_signature((u8*)hash, sizeof(*hash), ((BbEccCert*)certChain[0])->publicKey,
-                                       signature, 1);
+            ret = verify_ecc_signature((u8*)hash, sizeof(*hash), ((BbEccCert*)certChain[0])->publicKey, signature, 1);
         }
     } else {
         virage2_gen_public_key(key);

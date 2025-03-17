@@ -110,7 +110,7 @@ BSL_error generate_public_key(point* base_point, curve* E, field_2n* my_private,
         yyxy.e[i] = xy.e[i] ^ yy.e[i];
     }
 
-    poly_mul(&x, &x, &xx); // x^2
+    poly_mul(&x, &x, &xx);   // x^2
     poly_mul(&xx, &x, &xxx); // x^3
 
     // x^3 + x^2 + a6
@@ -458,7 +458,7 @@ void bsl_verify_ecc_sig(u8* data, u32 datasize, u32* public_key, u32* sign, BSL_
     copy((field_2n*)(sign + 0), &signature.c);
     copy((field_2n*)(sign + 8), &signature.d);
     //! @bug public_key (an (x,y) elliptic curve point ) is not verified for whether it actually is a point on sect233r1
-    //! but it seems unimportant in practice as the signatures themselves can only come from the first cert in a certificate
-    //! chain which is then protected by an RSA signature.
+    //! but it seems unimportant in practice as the signatures themselves can only come from the first cert in a
+    //! certificate chain which is then protected by an RSA signature.
     poly_DSA_verify((char*)data, datasize, &base, (point*)public_key, &signature, res, identity);
 }

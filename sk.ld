@@ -1,12 +1,15 @@
 OUTPUT_ARCH(mips)
 ENTRY(entrypoint)
 
+MEMORY {
+    sram (rwx) : ORIGIN = 0x9FC00000, LENGTH = 0x20000
+    flash (r) : ORIGIN = 0, LENGTH = 0x10000
+}
+
 SECTIONS {
 
-    .text 0x9FC00000 : AT(0)
+    .text :
     {
-        PROVIDE(entrypoint = .);
-
         KEEP(build/src/entry.o(.text*));
         build/src/cache.o(.text*)
         build/src/invaldcache.o(.text*)
@@ -28,7 +31,7 @@ SECTIONS {
         build/src/libcrypto/poly_math.o(.text*)
         build/src/libcrypto/algorithms.o(.text*)
         build/src/libcrypto/elliptic_math.o(.text*)
-    }
+    } > sram AT > flash
 
     .rodata :
     {
@@ -53,8 +56,7 @@ SECTIONS {
         build/src/libcrypto/poly_math.o(.rodata*)
         build/src/libcrypto/algorithms.o(.rodata*)
         build/src/libcrypto/elliptic_math.o(.rodata*)
-
-    }
+    } > sram AT > flash
 
     .data :
     {
@@ -79,9 +81,9 @@ SECTIONS {
         build/src/libcrypto/poly_math.o(.data*)
         build/src/libcrypto/algorithms.o(.data*)
         build/src/libcrypto/elliptic_math.o(.data*)
-    }
+    } > sram AT > flash
 
-    .bss :
+    .bss (NOLOAD) :
     {
         __bss_start = .;
 #ifndef NON_MATCHING
@@ -110,7 +112,7 @@ SECTIONS {
         build/src/libcrypto/algorithms.o(.bss*)
         build/src/libcrypto/elliptic_math.o(.bss*)
         __bss_end = .;
-    }
+    } > sram
 
     _gp = __bss_start + 0x8000 - 0x10;
 

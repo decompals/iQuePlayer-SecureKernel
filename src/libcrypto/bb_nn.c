@@ -35,7 +35,8 @@ void bigint_digit_mult(bigint_digit* a, bigint_digit b, bigint_digit c) {
  * Compute `a = b + c * d`
  * Returns carry
  */
-bigint_digit bigint_add_digit_mult(bigint_digit* a, const bigint_digit* b, bigint_digit c, const bigint_digit* d, int digits) {
+bigint_digit bigint_add_digit_mult(bigint_digit* a, const bigint_digit* b, bigint_digit c, const bigint_digit* d,
+                                   int digits) {
     bigint_digit carry;
     bigint_digit t[2];
     int i;
@@ -66,7 +67,8 @@ bigint_digit bigint_add_digit_mult(bigint_digit* a, const bigint_digit* b, bigin
 /**
  * Compute `a = b - c * d`
  */
-bigint_digit bigint_sub_digit_mult(bigint_digit* a, const bigint_digit* b, bigint_digit c, const bigint_digit* d, int digits) {
+bigint_digit bigint_sub_digit_mult(bigint_digit* a, const bigint_digit* b, bigint_digit c, const bigint_digit* d,
+                                   int digits) {
     bigint_digit borrow;
     bigint_digit t[2];
     int i;
@@ -387,7 +389,8 @@ int bigint_cmp(const bigint_digit* a, const bigint_digit* b, int digits) {
  * Computes `a = c / d` and `b = c % d`
  * such that `c = d * a + b`
  */
-void bigint_div(bigint_digit* a, bigint_digit* b, const bigint_digit* c, int cDigits, const bigint_digit* d, int dDigits) {
+void bigint_div(bigint_digit* a, bigint_digit* b, const bigint_digit* c, int cDigits, const bigint_digit* d,
+                int dDigits) {
     bigint_digit ai;
     bigint_digit cc[259];
     bigint_digit dd[129];
@@ -450,7 +453,8 @@ void bigint_mod_mult(bigint_digit* a, const bigint_digit* b, const bigint_digit*
  * Computes `a = (b ^ c) % d`
  * via binary exponentiation (with both 2 and 4)
  */
-void bigint_mod_exp(bigint_digit* a, const bigint_digit* b, const bigint_digit* c, int cDigits, const bigint_digit* d, int dDigits) {
+void bigint_mod_exp(bigint_digit* a, const bigint_digit* b, const bigint_digit* c, int cDigits, const bigint_digit* d,
+                    int dDigits) {
     bigint_digit bPower[3][129];
     bigint_digit ci;
     bigint_digit t[129];
@@ -487,7 +491,7 @@ void bigint_mod_exp(bigint_digit* a, const bigint_digit* b, const bigint_digit* 
     t[0] = 1;
 
     ciBits = bigint_digits(c, cDigits) - 1;
-    for (i = ciBits; i >= 0 ; i--) {
+    for (i = ciBits; i >= 0; i--) {
         ci = c[i];
         setbits = 32;
         if ((unsigned)i == ciBits) {

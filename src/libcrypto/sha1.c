@@ -72,7 +72,6 @@ static void SHA1Transform(SHA1Context* ctx) {
     ctx->digest[4] += E;
 }
 
-
 int SHA1Reset(SHA1Context* ctx) {
     ctx->digest[0] = 0x67452301;
     ctx->digest[1] = 0xEFCDAB89;
@@ -127,7 +126,7 @@ int SHA1Input(SHA1Context* ctx, SHA1_BYTE* buffer, int count) {
     }
 
     // Process 0x40 aligned blocks
-    while(count >= 0x40) {
+    while (count >= 0x40) {
         // Copy in next block to process
         memcpy(ctx->data, buffer, 0x40);
 

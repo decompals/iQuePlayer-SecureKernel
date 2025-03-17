@@ -105,7 +105,7 @@ s32 recrypt_list_get_entry_for_cid(BbRecryptList* list, BbContentId contentId, R
     for (i = 0; i < list->numEntries; i++) {
         recrypt_list_decrypt_entry(entry, list, i);
         if (entry->contentId == contentId) {
-        	return i;
+            return i;
         }
     }
     return -1;
@@ -122,7 +122,7 @@ s32 recrypt_list_get_entry_for_cid(BbRecryptList* list, BbContentId contentId, R
  */
 s32 recrypt_list_verify_size_and_sig(BbRecryptList* list) {
     if ((s32)(offsetof(BbRecryptList, entries) + list->numEntries * sizeof(RecryptListEntry)) < RECRYPT_LIST_MAX_SIZE) {
-    	return recrypt_list_verify_ecc_sig(list);
+        return recrypt_list_verify_ecc_sig(list);
     }
     return -1;
 }

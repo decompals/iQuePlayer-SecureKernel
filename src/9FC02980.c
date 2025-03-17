@@ -192,12 +192,14 @@ s32 verify_crlbundle(BbCrlBundle* bundle, u32 type, u32 requiredVersion) {
 
     if (strcmp((const char*)bundle->head->issuer, "Root") == 0) {
         // Verify the CRL signature against Root
-        ret = rsa_verify_signature(dataBlocks, ARRAY_COUNT(dataBlocks), rootRSAPublicKey, rootRSAExponent, SIGTYPE_RSA4096, (u32*)&bundle->head->signature);
+        ret = rsa_verify_signature(dataBlocks, ARRAY_COUNT(dataBlocks), rootRSAPublicKey, rootRSAExponent,
+                                   SIGTYPE_RSA4096, (u32*)&bundle->head->signature);
     } else {
         // Verify the CRL signature against the first cert in the cert chain, which is itself verified by the other
         // certs in the chain, the last of which should be verified by Root
         BbRsaCert* cert = (BbRsaCert*)bundle->certChain[0];
-        ret = rsa_verify_signature(dataBlocks, ARRAY_COUNT(dataBlocks), cert->publicKey, cert->exponent, bundle->head->sigType, (u32*)&bundle->head->signature);
+        ret = rsa_verify_signature(dataBlocks, ARRAY_COUNT(dataBlocks), cert->publicKey, cert->exponent,
+                                   bundle->head->sigType, (u32*)&bundle->head->signature);
     }
 
     // Finally, if the signature verified succesfully, check the CRL version against the versions in Virage
@@ -215,8 +217,7 @@ s32 verify_crlbundle(BbCrlBundle* bundle, u32 type, u32 requiredVersion) {
  *     -4 if verification of cprl failed
  *     -2 if verification of tsrl failed
  */
-s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion,
-                          BbCrlBundle* cprl, s32 requiredCprlVersion,
+s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion, BbCrlBundle* cprl, s32 requiredCprlVersion,
                           BbCrlBundle* tsrl, s32 requiredTsrlVersion) {
     u32 i;
 
@@ -230,7 +231,8 @@ s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion,
                 return -9;
             }
 
-            if (requiredTsrlVersion >= 0 && strstr((const char*)tsrl->certChain[0]->name.server, (const char*)carl->list[i]) != NULL) {
+            if (requiredTsrlVersion >= 0 &&
+                strstr((const char*)tsrl->certChain[0]->name.server, (const char*)carl->list[i]) != NULL) {
                 return -9;
             }
         }
@@ -264,23 +266,23 @@ s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrl
         return -1;
     }
 
-    ret = verify_all_crlbundles(&crls->carl, ticketBundle->ticket->cmd.head.caCrlVersion,
-                                &crls->cprl, ticketBundle->ticket->cmd.head.cpCrlVersion,
-                                &crls->tsrl, ticketBundle->ticket->head.tsCrlVersion);
+    ret = verify_all_crlbundles(&crls->carl, ticketBundle->ticket->cmd.head.caCrlVersion, &crls->cprl,
+                                ticketBundle->ticket->cmd.head.cpCrlVersion, &crls->tsrl,
+                                ticketBundle->ticket->head.tsCrlVersion);
     if (ret != 0) {
         return ret;
     }
 
     if (crls->carl.head != NULL) {
         for (i = 0; i < crls->carl.head->numberRevoked; i++) {
-            if (strstr((const char*)ticketBundle->ticketChain[1]->name.server, (const char*)crls->carl.list[i]) != NULL) {
+            if (strstr((const char*)ticketBundle->ticketChain[1]->name.server, (const char*)crls->carl.list[i]) !=
+                NULL) {
                 return -9;
             }
 
             if (strstr((const char*)ticketBundle->cmdChain[1]->name.server, (const char*)crls->carl.list[i]) != NULL) {
                 return -9;
             }
-
         }
     }
 
@@ -294,7 +296,8 @@ s32 check_ticket_bundle_revocations(BbTicketBundle* ticketBundle, BbAppLaunchCrl
 
     if (crls->tsrl.head != NULL) {
         for (i = 0; i < crls->tsrl.head->numberRevoked; i++) {
-            if (strstr((const char*)ticketBundle->ticketChain[0]->name.server, (const char*)crls->tsrl.list[i]) != NULL) {
+            if (strstr((const char*)ticketBundle->ticketChain[0]->name.server, (const char*)crls->tsrl.list[i]) !=
+                NULL) {
                 return -9;
             }
         }
@@ -309,7 +312,7 @@ s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBa
     u32 i;
 
     if (appLaunchCrls->carl.head != NULL) {
-        if (!CHECK_SKRAM_RANGE(appLaunchCrls->carl.head)){
+        if (!CHECK_SKRAM_RANGE(appLaunchCrls->carl.head)) {
             return -1;
         }
 
@@ -320,7 +323,7 @@ s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBa
     }
 
     if (appLaunchCrls->cprl.head != NULL) {
-        if (!CHECK_SKRAM_RANGE(appLaunchCrls->cprl.head)){
+        if (!CHECK_SKRAM_RANGE(appLaunchCrls->cprl.head)) {
             return -1;
         }
 
@@ -338,8 +341,8 @@ s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBa
         }
     }
 
-    ret = verify_all_crlbundles(&appLaunchCrls->carl, cmdHead->caCrlVersion,
-                                &appLaunchCrls->cprl, cmdHead->cpCrlVersion,
+    ret = verify_all_crlbundles(&appLaunchCrls->carl, cmdHead->caCrlVersion, // force formatting
+                                &appLaunchCrls->cprl, cmdHead->cpCrlVersion, //
                                 &appLaunchCrls->tsrl, -1);
     if (ret != 0) {
         return ret;

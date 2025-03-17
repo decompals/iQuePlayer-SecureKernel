@@ -30,6 +30,9 @@ ifeq ($(ORIG_COMPILER), 0)
   LDFLAGS  = -nostdlib -Wl,--gc-sections -Wl,-Map,$(@:.elf=.map)# -Wl,--print-gc-sections
 
   LD_BSS_PLUGIN :=
+
+  MV_DEP = :
+  FIX_SYMTAB = :
 else
   export COMPILER_PATH := tools/egcs/
   CC      := $(COMPILER_PATH)gcc
@@ -42,10 +45,15 @@ else
   LDFLAGS  = -Map $(@:.elf=.map)
 
   LD_BSS_PLUGIN := -plugin tools/com-plugin/common-plugin.so -plugin-opt order=bss_order.txt
+
+  # EGCS puts dep files in root rather than at the -o output..
+  # NOTE this will break if two files in different dirs have the same name.
+  MV_DEP = (echo -n "$(@D)/"; cat $(@F:.o=.d)) > $(@:.o=.d) && rm $(@F:.o=.d)
+  FIX_SYMTAB = $(STRIP) -N dummy_symbol_ $@
 endif
 
-CFLAGS += -D_LANGUAGE_C
-ASFLAGS += -D_LANGUAGE_ASSEMBLY
+CFLAGS += -D_LANGUAGE_C -MMD
+ASFLAGS += -D_LANGUAGE_ASSEMBLY -MMD
 
 OPTFLAGS := -Os -g3
 
@@ -53,6 +61,15 @@ AS      := $(CROSS)as
 OBJCOPY := $(CROSS)objcopy
 OBJDUMP := $(CROSS)objdump
 STRIP   := $(CROSS)strip
+
+# Formatting
+CLANG_VER := 14
+CLANG_FORMAT := clang-format-$(CLANG_VER)
+CLANG_TIDY := clang-tidy-$(CLANG_VER)
+CLANG_TIDY_CFLAGS := --target=mips -fno-builtin -std=gnu99 -m32 -Wno-everything
+CLANG_FORMAT_ARGS := -i -style=file
+CLANG_TIDY_ARGS := -p . --fix --fix-errors --fix-notes
+CLANG_TIDY_DEFS := -D_LANGUAGE_C -DNON_MATCHING
 
 # Source dirs
 SRC_DIRS := $(shell find src -type d)
@@ -62,10 +79,13 @@ S_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.s))
 O_FILES := $(foreach f,$(C_FILES:.c=.o),build/$f) \
            $(foreach f,$(S_FILES:.s=.o),build/$f)
 
+# Header dependency files
+DEP_FILES := $(foreach f,$(C_FILES:.c=.d) $(S_FILES:.s=.d),build/$f)
+
 # Create build directories
 $(shell mkdir -p build $(foreach dir,$(SRC_DIRS),build/$(dir)))
 
-.PHONY: all clean distclean setup
+.PHONY: all clean distclean format setup
 
 all: $(TARGET)
 ifeq ($(COMPARE),1)
@@ -81,6 +101,12 @@ distclean: clean
 	$(RM) -r expected
 	$(MAKE) -C tools distclean
 
+format:
+	$(CLANG_FORMAT) $(CLANG_FORMAT_ARGS) $(C_FILES)
+	$(CLANG_TIDY) $(CLANG_TIDY_ARGS) $(C_FILES) -- $(CLANG_TIDY_CFLAGS) $(INC) $(CLANG_TIDY_DEFS)
+# Fix any missing newlines at EOFs
+	$$(for fn in $(C_FILES); do tail -c1 $$fn | read -r _ || echo >> $$fn; done)
+
 setup:
 	$(MAKE) -C tools
 	$(MAKE) all COMPARE=1
@@ -91,7 +117,7 @@ endif
 
 $(TARGET): $(ELF)
 	$(OBJCOPY) -O binary $< $(@:.bin=.tmp)
-	dd if=$(@:.bin=.tmp) of=$@ bs=16K conv=sync status=none
+	dd if=$(@:.bin=.tmp) of=$@ bs=64K conv=sync status=none
 	@$(RM) $(@:.bin=.tmp)
 
 build/sk.ld: sk.ld
@@ -105,10 +131,14 @@ build/asm/%.o: asm/%.s
 
 build/src/%.o: src/%.s
 	$(CC) -x assembler-with-cpp $(ASFLAGS) -c $< -o $@
-	@$(STRIP) -N dummy_symbol_ $@
+	@$(MV_DEP)
+	@$(FIX_SYMTAB)
 	@$(OBJDUMP) -drz $@ > $(@:.o=.s)
 
 build/src/%.o: src/%.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) -c $< -o $@
-	@$(STRIP) -N dummy_symbol_ $@
+	@$(MV_DEP)
+	@$(FIX_SYMTAB)
 	@$(OBJDUMP) -drz $@ > $(@:.o=.s)
+
+-include $(DEP_FILES)

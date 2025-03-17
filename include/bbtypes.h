@@ -213,8 +213,8 @@ typedef struct BbRecryptList {
 
 #define RECRYPT_LIST_MAX_SIZE 0x4000
 
-s32 check_untrusted_ptr_range(void* ptr, u32 size, u32 alignment);
-s32 check_sk_ptr_range(void* ptr, u32 size, u32 alignment);
+s32 check_untrusted_ptr_range(void* pointer, u32 size, u32 alignment);
+s32 check_sk_ptr_range(void* pointer, u32 size, u32 alignment);
 
 #define CHECK_UNTRUSTED(ptr) \
     check_untrusted_ptr_range((ptr), sizeof(*(ptr)), ALIGNOF(*(ptr)))
@@ -257,7 +257,7 @@ s32 verify_all_crlbundles(BbCrlBundle* carl, s32 requiredCarlVersion,
 s32 verify_ecc_signature(u8* data, u32 datasize, u32* public_key, u32* signature, u32 identity);
 void virage2_gen_public_key(u32* pubkeyOut);
 s32 write_virage2(void);
-s32 write_virage_data(u32 controller, u32 *data, s32 size);
+s32 write_virage_data(u32 statusReg, u32* data, s32 size);
 s32 set_virage01_selector(BbVirage01* virageData);
 s32 card_read_page(u32 pageNum, s32 bufSelect);
 s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBase** chain,
@@ -265,9 +265,9 @@ s32 check_certs_against_revocation_list(BbContentMetaDataHead* cmdHead, BbCertBa
 void osInvalDCache(void* buf, s32 len);
 s32 get_clock_divider(void);
 s32 virage_load_flash(u32 statusReg);
-s32 virage_store_sram(u32 ctrlReg);
+s32 virage_store_sram(u32 statusReg);
 void* wordcopy(void* dst, void* src, s32 nWords);
-s32 randomness_test(u8* a0, u32 a1);
+s32 randomness_test(u8* data, u32 nbytes);
 void initialize_virage_controllers(void);
 s32 gen_random_key_material(u32* randomOut, s32 nWords);
 s32 rsa_verify_signature(RSADataBlock* dataBlocks, s32 numDataBlocks, const u32* certpublickey, const u32 certexponent,

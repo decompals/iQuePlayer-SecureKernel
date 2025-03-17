@@ -41,7 +41,7 @@ struct BbTicketBundle;
  *      SKC_INVALID_ARGS  If the supplied pointer is not valid.
  *      SKC_OK            Otherwise.
  */
-s32 skGetId(u32* bbId);
+s32 skGetId(BbId* bbId);
 
 /**
  * Prepares to launch an application.

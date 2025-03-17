@@ -4,11 +4,11 @@
 void delay(s32 n) {
     s32 i;
 
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; i++) {
 #ifdef NON_MATCHING
-        __asm__ volatile ("")
+        __asm__ volatile("");
 #endif
-        ;
+    }
 }
 
 void initialize_virage_controller(u32 statusReg) {
@@ -37,7 +37,7 @@ void initialize_virage_controllers(void) {
  *     -1 If error for any reason
  *      0 If success
  */
-s32 write_virage_data(u32 statusReg, u32 *data, s32 size) {
+s32 write_virage_data(u32 statusReg, u32* data, s32 size) {
     s32 wait;
     s32 div;
     u32 baseReg = statusReg & 0xFFFF0000;
@@ -118,7 +118,7 @@ s32 get_clock_divider(void) {
     } else if (clockId == 1) {
         return 12;
     } else {
-       return 10;
+        return 10;
     }
 }
 
