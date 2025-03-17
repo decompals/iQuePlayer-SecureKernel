@@ -8,13 +8,23 @@ The plugin expects a symbol order txt file listing the COMMON symbols in order o
 
 ## Usage
 
-Add `-plugin common-plugin.so -plugin-opt order=bss_order.txt -plugin-opt file=bss.o` to the linker invocation, replacing `bss_order.txt` and `bss.o` with alternative paths if desired.
+Add `-plugin common-plugin.so -plugin-opt order=bss_order.txt` to the linker invocation, replacing `bss_order.txt` with an alternative path if desired.
 
-Also add `*bss.o(.bss*)` to the linker script so that the additional input file is not discarded, if required.
+Also add any bss output files mentioned in the order file to the linker script (e.g. `bss.o` would be added as `*bss.o(.bss*)`) so that the additional input file is not discarded, if required.
 
-### **Options details**
-- **order**: Path to the symbol order file.
-- **file**: Path to the bss ELF file that will be written by the plugin and read back by the linker.
+### **Symbol order file syntax**
+
+```
+<ofile> {
+    <sym1>;
+    <sym2>;
+    <sym3>;
+    [...]
+}
+[...]
+```
+
+The order file supports 2 styles of single-line comments (`//` and `#`) and C-style multi-line comments and ignores whitespace.
 
 ## Building
 

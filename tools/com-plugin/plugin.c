@@ -1,3 +1,21 @@
+/**
+ * COMMON symbol ordering plugin for linkers supporting the External Linker Plugin API.
+ *
+ * Copyright (C) 2025 Tharo
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -8,82 +26,17 @@
 #include <errno.h>
 #include <unistd.h>
 
-#if defined(__linux__) || defined(__CYGWIN__)
-#elif defined(__APPLE__)
-#include <libkern/OSByteOrder.h>
+#include "endian.h"
+#include "elf.h"
+#include "plugin-api.h"
 
-#define htobe16(x) OSSwapHostToBigInt16(x)
-#define htole16(x) OSSwapHostToLittleInt16(x)
-#define be16toh(x) OSSwapBigToHostInt16(x)
-#define le16toh(x) OSSwapLittleToHostInt16(x)
-
-#define htobe32(x) OSSwapHostToBigInt32(x)
-#define htole32(x) OSSwapHostToLittleInt32(x)
-#define be32toh(x) OSSwapBigToHostInt32(x)
-#define le32toh(x) OSSwapLittleToHostInt32(x)
-
-#define htobe64(x) OSSwapHostToBigInt64(x)
-#define htole64(x) OSSwapHostToLittleInt64(x)
-#define be64toh(x) OSSwapBigToHostInt64(x)
-#define le64toh(x) OSSwapLittleToHostInt64(x)
-#else
-
-#if !defined(__BYTE_ORDER__)
-#error "No endian define provided by compiler"
-#endif
-
-#if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-
-#define htobe16(x) (x)
-#define htole16(x) __builtin_bswap16(x)
-#define be16toh(x) (x)
-#define le16toh(x) __builtin_bswap16(x)
-
-#define htobe32(x) (x)
-#define htole32(x) __builtin_bswap32(x)
-#define be32toh(x) (x)
-#define le32toh(x) __builtin_bswap32(x)
-
-#define htobe64(x) (x)
-#define htole64(x) __builtin_bswap64(x)
-#define be64toh(x) (x)
-#define le64toh(x) __builtin_bswap64(x)
-
-#else
-
-#define htobe16(x) __builtin_bswap16(x)
-#define htole16(x) (x)
-#define be16toh(x) __builtin_bswap16(x)
-#define le16toh(x) (x)
-
-#define htobe32(x) __builtin_bswap32(x)
-#define htole32(x) (x)
-#define be32toh(x) __builtin_bswap32(x)
-#define le32toh(x) (x)
-
-#define htobe64(x) __builtin_bswap64(x)
-#define htole64(x) (x)
-#define be64toh(x) __builtin_bswap64(x)
-#define le64toh(x) (x)
-
-#endif
-
-#endif
-
-#include <elf.h>
-#define EF_MIPS_32BITMODE 256
-
-#define ELF32_IDENT_VALID(ehdr)            \
-   ((ehdr)->e_ident[EI_MAG0] == ELFMAG0 && \
-    (ehdr)->e_ident[EI_MAG1] == ELFMAG1 && \
-    (ehdr)->e_ident[EI_MAG2] == ELFMAG2 && \
-    (ehdr)->e_ident[EI_MAG3] == ELFMAG3)
+#define ELF32_IDENT_VALID(ehdr)                                                   \
+   ((ehdr)->e_ident[EI_MAG0] == ELFMAG0 && (ehdr)->e_ident[EI_MAG1] == ELFMAG1 && \
+    (ehdr)->e_ident[EI_MAG2] == ELFMAG2 && (ehdr)->e_ident[EI_MAG3] == ELFMAG3)
 
 #define ELF32_IS_32(ehdr) ((ehdr)->e_ident[EI_CLASS] == ELFCLASS32)
 
 #define ELF32_IS_BE(ehdr) ((ehdr)->e_ident[EI_DATA] == ELFDATA2MSB)
-
-
 
 #define iswhitespace(c) (isblank(c) || ((c) == '\n'))
 
@@ -101,8 +54,6 @@
 #define BITSET_SET(set, key)    ((set)[(key) >> BITSET_SHIFT] |= ((BITSET_TYPE)1 << ((key) & BITSET_MASK)))
 
 #define strequ(s1, s2const) (strncmp(s1, s2const, sizeof(s2const) - 1) == 0)
-
-#include "plugin-api.h"
 
 struct bss_ofile {
     char        *path;
@@ -146,14 +97,15 @@ static int read_s_(int fd, void *buf, size_t nbyte, int line)
     }
     return 0;
 }
-#define read_s(fd, buf, nbyte) do { if (read_s_(fd, buf, nbyte, __LINE__)) return LDPS_ERR; } while (0)
+#define read_s(fd, buf, nbyte) \
+    do { if (read_s_(fd, buf, nbyte, __LINE__)) return LDPS_ERR; } while (0)
 
 #define SEEKF(file, pos) \
     lseek((file)->fd, (file)->offset + (pos), SEEK_SET)
 
-#define WITH_NEW_FILE_POS(file, pos)                                                                \
-    for (off_t GLUE(_o_,__LINE__) = ltell((file)->fd),GLUE(_b_,__LINE__)=(SEEKF(file, pos), 1);     \
-         GLUE(_b_,__LINE__);                                                                        \
+#define WITH_NEW_FILE_POS(file, pos)                                                            \
+    for (off_t GLUE(_o_,__LINE__) = ltell((file)->fd),GLUE(_b_,__LINE__)=(SEEKF(file, pos), 1); \
+         GLUE(_b_,__LINE__);                                                                    \
          GLUE(_b_,__LINE__)=0,lseek((file)->fd, GLUE(_o_,__LINE__), SEEK_SET))
 
 static bool
@@ -225,8 +177,8 @@ claim_file(const struct ld_plugin_input_file *file, int *claimed)
                 }
 
                 // Read strtab contents
-                size_t strtab_offset = be32toh(strtab.sh_offset);
-                size_t strtab_size = be32toh(strtab.sh_size);
+                uint32_t strtab_offset = be32toh(strtab.sh_offset);
+                uint32_t strtab_size = be32toh(strtab.sh_size);
                 strtab_data = malloc(strtab_size);
                 WITH_NEW_FILE_POS(file, strtab_offset) {
                     read_s(file->fd, strtab_data, strtab_size);
@@ -393,7 +345,7 @@ all_symbols_read(void)
 
         free(string_offsets);
 
-        const size_t shdr_name_offsets[5] = { 0, 1, 6, 13, 20 };
+        const uint32_t shdr_name_offsets[5] = { 0, 1, 6, 13, 20 };
         size_t shstrtab_offset = ftell(elf);
         // Write shstrtab
         fwrite(
@@ -500,7 +452,7 @@ all_symbols_read(void)
             .e_phnum = htobe16(0),
             .e_shentsize = htobe16(sizeof(Elf32_Shdr)),
             .e_shnum = htobe16(ARRLEN(shdrs)),
-            .e_shstrndx = htobe16(4),
+            .e_shstrndx = htobe16(4), /* shstrtab */
         };
         fseek(elf, 0, SEEK_SET);
         fwrite(&ehdr, sizeof(ehdr), 1, elf);
@@ -511,10 +463,9 @@ all_symbols_read(void)
         // Add it as an additional input file
         enum ld_plugin_status ps = pl.add_input_file(ofile->path);
         if (ps != LDPS_OK) {
-            pl.message(LDPL_ERROR, "error adding additional input file\n");
+            pl.message(LDPL_ERROR, "error adding %s as an additional input file\n", ofile->path);
             return ps;
         }
-
     }
     return LDPS_OK;
 }
@@ -647,7 +598,7 @@ whitespace:
     // If we're at EOF, check if that's OK or whether it's a syntax error
     if (*s == '\0') {
         if (eof_ok) goto eof;
-        else SYNTAX_ERR("Unexpected EOF");
+        SYNTAX_ERR("Unexpected EOF");
     }
     goto *next;
 
@@ -780,7 +731,6 @@ enum ld_plugin_status
 onload(struct ld_plugin_tv *tv)
 {
     enum ld_plugin_status ps;
-    bool error;
 
     // Initialize our state
     memset(&pl, 0, sizeof(pl));
@@ -861,13 +811,10 @@ onload(struct ld_plugin_tv *tv)
 
     // Check args
 
-    error = false;
     if (pl.order_path == NULL) {
         pl.message(LDPL_ERROR, "Missing option -plugin-opt order=<order.txt>");
-        error = true;
-    }
-    if (error)
         return LDPS_ERR;
+    }
 
     // Read the order file
 
