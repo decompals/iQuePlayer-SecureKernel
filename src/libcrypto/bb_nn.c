@@ -35,7 +35,7 @@ void bigint_digit_mult(bigint_digit* a, bigint_digit b, bigint_digit c) {
  * Compute `a = b + c * d`
  * Returns carry
  */
-bigint_digit bigint_add_digit_mult(bigint_digit* a, bigint_digit* b, bigint_digit c, bigint_digit* d, int digits) {
+bigint_digit bigint_add_digit_mult(bigint_digit* a, const bigint_digit* b, bigint_digit c, const bigint_digit* d, int digits) {
     bigint_digit carry;
     bigint_digit t[2];
     int i;
@@ -66,7 +66,7 @@ bigint_digit bigint_add_digit_mult(bigint_digit* a, bigint_digit* b, bigint_digi
 /**
  * Compute `a = b - c * d`
  */
-bigint_digit bigint_sub_digit_mult(bigint_digit* a, bigint_digit* b, bigint_digit c, bigint_digit* d, int digits) {
+bigint_digit bigint_sub_digit_mult(bigint_digit* a, const bigint_digit* b, bigint_digit c, const bigint_digit* d, int digits) {
     bigint_digit borrow;
     bigint_digit t[2];
     int i;
@@ -100,7 +100,7 @@ int bigint_digit_bits(bigint_digit a) {
     return i;
 }
 
-void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c) {
+void bigint_digit_div(bigint_digit* a, const bigint_digit* b, const bigint_digit c) {
     bigint_digit t[2];
     bigint_digit u;
     bigint_digit v;
@@ -171,7 +171,7 @@ void bigint_digit_div(bigint_digit* a, bigint_digit* b, bigint_digit c) {
     *a = (aHigh << 0x10) + aLow;
 }
 
-void bigint_encode(u8* a, int len, bigint_digit* b, int digits) {
+void bigint_encode(u8* a, int len, const bigint_digit* b, int digits) {
     bigint_digit t;
     int j;
     unsigned int i;
@@ -193,7 +193,7 @@ void bigint_encode(u8* a, int len, bigint_digit* b, int digits) {
     }
 }
 
-void bigint_copy(bigint_digit* a, bigint_digit* b, int digits) {
+void bigint_copy(bigint_digit* a, const bigint_digit* b, int digits) {
     int i;
 
     for (i = 0; i < digits; i++) {
@@ -212,7 +212,7 @@ void bigint_zero(bigint_digit* a, int digits) {
 /**
  * Computes `a = b + c`
  */
-bigint_digit bigint_add(bigint_digit* a, bigint_digit* b, bigint_digit* c, int digits) {
+bigint_digit bigint_add(bigint_digit* a, const bigint_digit* b, const bigint_digit* c, int digits) {
     bigint_digit ai;
     bigint_digit bi;
     bigint_digit ci;
@@ -243,7 +243,7 @@ bigint_digit bigint_add(bigint_digit* a, bigint_digit* b, bigint_digit* c, int d
 /**
  * Computes `a = b - c`
  */
-bigint_digit bigint_sub(bigint_digit* a, bigint_digit* b, bigint_digit* c, int digits) {
+bigint_digit bigint_sub(bigint_digit* a, const bigint_digit* b, const bigint_digit* c, int digits) {
     bigint_digit ai;
     bigint_digit bi;
     bigint_digit ci;
@@ -271,7 +271,7 @@ bigint_digit bigint_sub(bigint_digit* a, bigint_digit* b, bigint_digit* c, int d
     return borrow;
 }
 
-int bigint_digits(bigint_digit* a, int digits) {
+int bigint_digits(const bigint_digit* a, int digits) {
     /* int i; */
 
     while (--digits >= 0) {
@@ -285,7 +285,7 @@ int bigint_digits(bigint_digit* a, int digits) {
 /**
  * Computes `a = b * c`
  */
-void bigint_mult(bigint_digit* a, bigint_digit* b, bigint_digit* c, int digits) {
+void bigint_mult(bigint_digit* a, const bigint_digit* b, const bigint_digit* c, int digits) {
     bigint_digit t[258];
     int bDigits;
     int cDigits;
@@ -305,7 +305,7 @@ void bigint_mult(bigint_digit* a, bigint_digit* b, bigint_digit* c, int digits) 
  * Computes `a = b << c`
  * Returns carry
  */
-bigint_digit bigint_left_shift(bigint_digit* a, bigint_digit* b, int c, int digits) {
+bigint_digit bigint_left_shift(bigint_digit* a, const bigint_digit* b, int c, int digits) {
     bigint_digit bi;
     bigint_digit carry;
     int i;
@@ -333,7 +333,7 @@ bigint_digit bigint_left_shift(bigint_digit* a, bigint_digit* b, int c, int digi
  * Computes `a = b >> c`
  * Returns carry
  */
-bigint_digit bigint_right_shift(bigint_digit* a, bigint_digit* b, int c, int digits) {
+bigint_digit bigint_right_shift(bigint_digit* a, const bigint_digit* b, int c, int digits) {
     bigint_digit bi;
     bigint_digit carry;
     int i;
@@ -365,7 +365,7 @@ bigint_digit bigint_right_shift(bigint_digit* a, bigint_digit* b, int c, int dig
  *  -1 if a < b
  *   0 if they are equal
  */
-int bigint_cmp(bigint_digit* a, bigint_digit* b, int digits) {
+int bigint_cmp(const bigint_digit* a, const bigint_digit* b, int digits) {
     bigint_digit ai;
     bigint_digit bi;
     int i;
@@ -384,9 +384,10 @@ int bigint_cmp(bigint_digit* a, bigint_digit* b, int digits) {
 }
 
 /**
- * Computes `a = c / d + b`
+ * Computes `a = c / d` and `b = c % d`
+ * such that `c = d * a + b`
  */
-void bigint_div(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, bigint_digit* d, int dDigits) {
+void bigint_div(bigint_digit* a, bigint_digit* b, const bigint_digit* c, int cDigits, const bigint_digit* d, int dDigits) {
     bigint_digit ai;
     bigint_digit cc[259];
     bigint_digit dd[129];
@@ -429,7 +430,7 @@ void bigint_div(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, 
 /**
  * Computes `a = b % c`
  */
-void bigint_mod(bigint_digit* a, bigint_digit* b, int bDigits, bigint_digit* c, int cDigits) {
+void bigint_mod(bigint_digit* a, const bigint_digit* b, int bDigits, const bigint_digit* c, int cDigits) {
     bigint_digit t[258];
 
     bigint_div(t, a, b, bDigits, c, cDigits);
@@ -438,7 +439,7 @@ void bigint_mod(bigint_digit* a, bigint_digit* b, int bDigits, bigint_digit* c, 
 /**
  * Computes `a = (b * c) % d`
  */
-void bigint_mod_mult(bigint_digit* a, bigint_digit* b, bigint_digit* c, bigint_digit* d, int digits) {
+void bigint_mod_mult(bigint_digit* a, const bigint_digit* b, const bigint_digit* c, const bigint_digit* d, int digits) {
     bigint_digit t[258];
 
     bigint_mult(t, b, c, digits);
@@ -449,7 +450,7 @@ void bigint_mod_mult(bigint_digit* a, bigint_digit* b, bigint_digit* c, bigint_d
  * Computes `a = (b ^ c) % d`
  * via binary exponentiation (with both 2 and 4)
  */
-void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigits, bigint_digit* d, int dDigits) {
+void bigint_mod_exp(bigint_digit* a, const bigint_digit* b, const bigint_digit* c, int cDigits, const bigint_digit* d, int dDigits) {
     bigint_digit bPower[3][129];
     bigint_digit ci;
     bigint_digit t[129];
@@ -508,7 +509,7 @@ void bigint_mod_exp(bigint_digit* a, bigint_digit* b, bigint_digit* c, int cDigi
     bigint_copy(a, t, dDigits);
 }
 
-int bigint_iszero(bigint_digit* a, int digits) {
+int bigint_iszero(const bigint_digit* a, int digits) {
     int i;
 
     for (i = 0; i < digits; i++) {
@@ -519,7 +520,7 @@ int bigint_iszero(bigint_digit* a, int digits) {
     return TRUE;
 }
 
-int bigint_bits(bigint_digit* a, int digits) {
+int bigint_bits(const bigint_digit* a, int digits) {
     digits = bigint_digits(a, digits);
     if (digits == 0) {
         return 0;
@@ -527,7 +528,7 @@ int bigint_bits(bigint_digit* a, int digits) {
     return (digits - 1) * 32 + bigint_digit_bits(a[digits - 1]);
 }
 
-void bsl_rsa_verify(char* result, unsigned long* certsign, const unsigned long* certpublickey,
+void bsl_rsa_verify(char* result, const unsigned long* certsign, const unsigned long* certpublickey,
                     const unsigned long* certexponent, int num_bits) {
     unsigned long nDigits;
     bigint_digit bign[129];
@@ -557,7 +558,7 @@ void bsl_rsa_verify(char* result, unsigned long* certsign, const unsigned long* 
     bigint_encode((u8*)result, (num_bits + 7) / 8, bigc, nDigits);
 }
 
-void field_to_bigint(field_2n* a, bigint_digit* b, int digits) {
+void field_to_bigint(const field_2n* a, bigint_digit* b, int digits) {
     short i;
 
     for (i = 0; i < digits; i++) {
@@ -567,7 +568,7 @@ void field_to_bigint(field_2n* a, bigint_digit* b, int digits) {
 
 void null(field_2n*);
 
-void bigint_to_field(bigint_digit* a, field_2n* b, int digits) {
+void bigint_to_field(const bigint_digit* a, field_2n* b, int digits) {
     short i;
 
     null(b);
@@ -580,7 +581,7 @@ void bigint_to_field(bigint_digit* a, field_2n* b, int digits) {
  * Computes the modular multiplicative inverse `a = b^{-1} mod c`
  * via the extended euclidean algorithm
  */
-void bigint_mod_inv(bigint_digit* a, bigint_digit* b, bigint_digit* c, int digits) {
+void bigint_mod_inv(bigint_digit* a, const bigint_digit* b, const bigint_digit* c, int digits) {
     bigint_digit q[8];
     bigint_digit t1[8];
     bigint_digit t3[8];

@@ -3,12 +3,18 @@
 
 #include "ultratypes.h"
 
+#define AES_ENCRYPT 0
+#define AES_DECRYPT 1
+
 typedef struct {
     /* 0x00 */ u8 direction;
     /* 0x04 */ int Nr;
     /* 0x08 */ u32 rk[60];
     /* 0xF8 */ u32 ek[60];
 } AesKeyInstance; // size = 0x1E8
+
+#define AES_MODE_1 1
+#define AES_MODE_2 2
 
 typedef struct {
     /* 0x0 */ u32 mode;

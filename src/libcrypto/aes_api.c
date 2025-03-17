@@ -15,7 +15,7 @@ int aesMakeKey(AesKeyInstance* key, u8 direction, int keyLen, u8* keyMaterial) {
         return -2;
     }
 
-    if (direction == 0) {
+    if (direction == AES_ENCRYPT) {
         key->Nr = rijndaelKeySetupEnc(key->rk, keyMaterial, keyLen);
     } else {
         key->Nr = rijndaelKeySetupDec(key->rk, keyMaterial, keyLen);
@@ -25,7 +25,7 @@ int aesMakeKey(AesKeyInstance* key, u8 direction, int keyLen, u8* keyMaterial) {
 }
 
 int aesCipherInit(AesCipherInstance* cipher, u8 mode, u8* IV) {
-    if (mode != 1 && mode != 2) {
+    if (mode != AES_MODE_1 && mode != AES_MODE_2) {
         return -4;
     }
     cipher->mode = mode;
@@ -43,7 +43,7 @@ int aesBlockEncrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, i
     u8 block[16];
     u8* iv;
 
-    if (cipher == NULL || key == NULL || key->direction == 1) {
+    if (cipher == NULL || key == NULL || key->direction == AES_DECRYPT) {
         return -5;
     }
     if (input == NULL || inputLen <= 0) {
@@ -53,14 +53,15 @@ int aesBlockEncrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, i
     numBlocks = inputLen >> 7;
 
     switch (cipher->mode) {
-        case 1:
+        case AES_MODE_1:
             for (i = numBlocks; i > 0; i--) {
                 rijndaelEncrypt(key->rk, key->Nr, input, outBuffer);
                 input += sizeof(block);
                 outBuffer += sizeof(block);
             }
             break;
-        case 2:
+
+        case AES_MODE_2:
             iv = cipher->IV;
             for (i = numBlocks; i > 0; i--) {
                 ((u32*)block)[0] = ((u32*)input)[0] ^ ((u32*)iv)[0];
@@ -74,6 +75,7 @@ int aesBlockEncrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, i
             }
             memcpy(cipher->IV, iv, sizeof(cipher->IV));
             break;
+
         default:
             return -5;
     }
@@ -86,8 +88,8 @@ int aesBlockDecrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, i
     u8 block[16];
     u8* iv;
 
-    if (cipher == NULL || key == NULL || (cipher->mode == 1 && key->direction == 0) ||
-        (cipher->mode == 2 && key->direction == 0)) {
+    if (cipher == NULL || key == NULL || (cipher->mode == AES_MODE_1 && key->direction == AES_ENCRYPT) ||
+        (cipher->mode == AES_MODE_2 && key->direction == AES_ENCRYPT)) {
         return -5;
     }
     if (input == NULL || inputLen <= 0) {
@@ -97,14 +99,15 @@ int aesBlockDecrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, i
     numBlocks = inputLen >> 7;
 
     switch (cipher->mode) {
-        case 1:
+        case AES_MODE_1:
             for (i = numBlocks; i > 0; i--) {
                 rijndaelDecrypt(key->rk, key->Nr, input, outBuffer);
                 input += sizeof(block);
                 outBuffer += sizeof(block);
             }
             break;
-        case 2:
+
+        case AES_MODE_2:
             iv = cipher->IV;
             for (i = numBlocks; i > 0; i--) {
                 rijndaelDecrypt(key->rk, key->Nr, input, block);
@@ -118,6 +121,7 @@ int aesBlockDecrypt(AesCipherInstance* cipher, AesKeyInstance* key, u8* input, i
                 outBuffer += sizeof(block);
             }
             break;
+
         default:
             return -5;
     }
