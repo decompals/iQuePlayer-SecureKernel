@@ -7,6 +7,10 @@
 /**
  * Create an AES key from a public key and the console's private key via
  * Elliptic Curve Diffie-Hellman (ECDH) using the sect233r1 curve.
+ *
+ *! @bug The public key is not checked for whether it is a point on the curve.
+ *!      If a public key of all 0s were passed, the resulting shared key would
+ *!      also be all 0s irrespective of the private key.
  */
 BSL_error eccGenAesKey(u32* publicKey, u32* privateKey, u32* sharedKey) {
     field_2n pvtkey;

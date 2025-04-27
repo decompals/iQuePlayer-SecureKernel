@@ -6,10 +6,6 @@
 #include "libcrypto/sha1.h"
 #include "macros.h"
 
-extern BbVirage01 virage01;
-extern u32 g_cur_proc_trial_limit;
-extern u32 g_trial_time_elapsed;
-
 #define SKRAM_START 0x9FC40000
 
 /**

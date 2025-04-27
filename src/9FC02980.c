@@ -2,8 +2,6 @@
 #include "string.h"
 #include "macros.h"
 
-extern BbVirage01 virage01;
-
 /**
  * Gets the expected revocation list version for the provided CRL type, stored in Virage.
  *
@@ -53,18 +51,21 @@ s32 check_crl_root(BbCrlHead* crlHead, u32 expectedType) {
 
     switch (crlHead->type) {
         case CRL_TYPE_TS:
+            // Check that TS-type issuers start with Root-XSCA
             if (strncmp((const char*)crlHead->issuer, "Root-XSCA", 9) != 0) {
                 return -1;
             }
             break;
 
         case CRL_TYPE_CP:
+            // Check that CP-type issuers start with Root-CPCA
             if (strncmp((const char*)crlHead->issuer, "Root-CPCA", 9) != 0) {
                 return -1;
             }
             break;
 
         case CRL_TYPE_CA:
+            // Check that the CA-type issuer is Root
             if (strncmp((const char*)crlHead->issuer, "Root", 5) != 0) {
                 return -1;
             }

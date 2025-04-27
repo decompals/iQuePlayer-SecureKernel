@@ -131,9 +131,9 @@ void bigint_digit_div(bigint_digit* a, const bigint_digit* b, const bigint_digit
     if (~temp < t[0]) {
         t[1]--;
     }
-    t[1] = (t[1] - (u >> 0x10)) - v;
+    t[1] = t[1] - (u >> 0x10) - v;
 
-    while (cHigh < t[1] || (t[1] == cHigh && !(t[0] < (unsigned)(cLow << 0x10)))) {
+    while (cHigh < t[1] || (t[1] == cHigh && t[0] >= (unsigned)(cLow << 0x10))) {
         temp = cLow << 0x10;
         t[0] -= temp;
         if (~temp < t[0]) {
@@ -162,7 +162,7 @@ void bigint_digit_div(bigint_digit* a, const bigint_digit* b, const bigint_digit
         t[1]--;
     }
 
-    t[1] -= (v >> 0x10);
+    t[1] -= v >> 0x10;
     while (t[1] > 0 || (t[1] == 0 && t[0] >= c)) {
         t[0] -= c;
         if (~c < t[0]) {

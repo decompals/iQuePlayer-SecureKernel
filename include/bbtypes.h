@@ -289,5 +289,8 @@ extern BbTicketId g_cur_trial_tid;
 #define TRIAL_TID_UNSET 0xFFFF
 extern s16 g_cur_trial_cc;
 extern u16 g_cur_proc_trial_type;
+extern BbVirage01 virage01;
+extern u32 g_cur_proc_trial_limit;
+extern u32 g_trial_time_elapsed;
 
 #endif

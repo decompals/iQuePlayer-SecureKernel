@@ -7,8 +7,6 @@
 #include "libcrypto/sha1.h"
 #include "macros.h"
 
-extern BbVirage01 virage01;
-
 u32 cur_proc_allowed_skc_bitmask;
 
 BbVirage2* virage2_offset = (BbVirage2*)PHYS_TO_K1(VIRAGE2_BASE_ADDR);
@@ -92,7 +90,30 @@ s32 rsa_check_signature(BbShaHash* digest, const u32* certpublickey, const u32 c
 
     bsl_rsa_verify(result, certsign, certpublickey, &certexponent, rsaBits);
 
+    // This essentially does RSA_BYTES - DIGEST_SIZE = PADDING_SIZE to skip the padding
     rsaBytes -= sizeof(BbShaHash);
+    //! @bug No verification of the padding is done, breaking RSA security guarantees.
+    //!      The padding can be completely wrong but as long as the least significant
+    //!      160 bits match the message hash it will verify.
+    //!
+    //!      Original ticket signatures appear to be padded with a PKCS-style padding:
+    //!         type    01
+    //!         PS      ff..ff
+    //!         zero    00
+    //!         ASN.1   3021300906052B0E03021A05000414
+    //!         hash    [...]
+    //!
+    //!      Notably there is an easy solution for exponent=3, relying on how 2^(160 * 3) < 2^4095:
+    //!         phi(2^160) = 2^159              where phi(n) is Euler's totient function
+    //!         let d = 3^-1 mod 2^159          calculates the modular inverse
+    //!         let s = hash^d mod 2^160        calculates the cube root mod 2^160
+    //!         hash (160 bits) is smaller than the public key (4095 bits) so the modulus doesn't affect the result
+    //!         so the signature check ((s^3 mod N == hash) mod 2^160) is trivially true
+    //!
+    //!      There does not appear to be a known procedure when the mod N step is nontrivial, such as for e=65537.
+    //!      There also does not appear to be a proof that 65537 is immune from such forgery. Intuitively it feels
+    //!      like there should be an advantage to having 3935 unverified bits that makes this easier than finding
+    //!      a SHA1 hash collision in general.
     if (memcmp(digest, &result[rsaBytes], sizeof(BbShaHash)) == 0) {
         return 0;
     }
@@ -324,8 +345,6 @@ s32 card_read_page(u32 pageNum, s32 bufSelect) {
     return 0;
 }
 
-// TODO: File split here?
-
 char* strchr(char* str, char c) {
     for (; *str != c; str++) {
         if (*str == '\0') {
@@ -364,7 +383,7 @@ int strncmp(const char* str1, const char* str2, int num) { // num is signed?
         if (str1[n] != str2[n]) {
             ret = -1;
         }
-        // no null termination check
+        //! @bug No null termination check, acts more like memcmp
     }
     return ret;
 }
@@ -443,8 +462,6 @@ int memcmp(const void* ptr1, const void* ptr2, size_t num) {
     }
     return 0;
 }
-
-// TODO: File split here?
 
 /**
  * Computes the Virage01 checksum, taken as the sum of u16 data elements mod 2^16.

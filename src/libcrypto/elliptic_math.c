@@ -578,7 +578,7 @@ void poly_elliptic_sub(const point* p1, const point* p2, point* p3, const curve*
     poly_elliptic_sum(p1, &temp, p3, curv);
 }
 
-/* Elliptic curve point multiplication, r = k x p */
+/* Elliptic curve point multiplication, r = k x p, using a slow double-and-add method */
 void poly_elliptic_mul_slow(const field_2n* k, const point* p, point* r, const curve* curv) {
     char balanced[234]; //! Cache timing attack?
     ITER_TYPE i;

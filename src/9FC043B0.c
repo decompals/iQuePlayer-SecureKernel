@@ -128,11 +128,11 @@ s32 recrypt_list_verify_size_and_sig(BbRecryptList* list) {
 }
 
 /**
- * A
+ * Adds a new entry to the recrypt list for the given CID.
  *
  * @param list          The recrypt list to add the entry to.
- * @param contentId     A
- * @param recryptStatus A
+ * @param contentId     The content id to associate the entry with.
+ * @param recryptStatus The recrypt status of this new entry.
  */
 s32 recrypt_list_add_new_entry(BbRecryptList* list, BbContentId contentId, RecryptStatus recryptStatus) {
     RecryptListEntry entry;
@@ -155,13 +155,14 @@ s32 recrypt_list_add_new_entry(BbRecryptList* list, BbContentId contentId, Recry
 }
 
 /**
- * A
+ * Retrieves the AES key for CID from the provided recrypt list.
+ * If there is no entry for the provided CID, a new entry will be created.
  *
- * @param list      A
- * @param key       A
- * @param contentId A
+ * @param list      The recrypt list to search.
+ * @param key       Where to store the AES key.
+ * @param contentId The content id of the entry to find.
  *
- * @return A
+ * @return The recrypt status of the recrypt list entry.
  */
 RecryptStatus recrypt_list_get_key_for_cid(BbRecryptList* list, BbAesKey* key, BbContentId contentId) {
     RecryptListEntry entry;

@@ -92,8 +92,10 @@ s32 verify_and_load_ticket_bundle(BbTicketBundle* bundle) {
         memcpy(&contentMetaDataHead, cmdHead, sizeof(BbContentMetaDataHead));
         // Derive the AES key for decrypting the CMD key from the server's public key and the console's private key
         eccGenAesKey(head->serverKey, virage2_offset->privateKey, key1);
+        // Decrypt the CMD key with the derived key
         aes_SwDecrypt((u8*)key1, (u8*)head->cmdIv, (u8*)cmdHead->key, sizeof(BbAesKey), (u8*)contentMetaDataHead.key);
 
+        // Verify the Content Desc + CMD, AFTER deriving the key
         blocks[0].data = &bundle->ticket->cmd.contentDesc;
         blocks[0].size = sizeof(BbContentDesc);
         blocks[1].data = &contentMetaDataHead;
@@ -102,6 +104,7 @@ s32 verify_and_load_ticket_bundle(BbTicketBundle* bundle) {
         cmdCert = (BbRsaCert*)bundle->cmdChain[0];
         if (rsa_verify_signature(blocks, ARRAY_COUNT(blocks), cmdCert->publicKey, cmdCert->exponent, SIGTYPE_RSA2048,
                                  bundle->ticket->cmd.head.contentMetaDataSign) >= 0) {
+            // CMD verified, AGAIN decrypt the content key but with the common key this time
             aes_SwDecrypt((u8*)virage2_offset->bootAppKey, (u8*)cmdHead->commonCmdIv, (u8*)contentMetaDataHead.key,
                           sizeof(BbAesKey), (u8*)decryptedKey);
             memcpy(contentMetaDataHead.key, decryptedKey, sizeof(BbAesKey));
